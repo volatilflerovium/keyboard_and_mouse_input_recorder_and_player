@@ -1,0 +1,6 @@
+[submodule "hid_keyboard_and_mouse/udp_server_for_pico_w"]
+	path = hid_keyboard_and_mouse/udp_server_for_pico_w
+	url = https://github.com/volatilflerovium/udp_server_for_pico_w.git
+[submodule "hid_keyboard_and_mouse/tinyusb"]
+	path = hid_keyboard_and_mouse/tinyusb
+	url = https://github.com/hathach/tinyusb
