@@ -8,6 +8,8 @@ record which buttons to press and what keystroke to input and compare
 the result with a screenshot of the expected result, which is done by the
 same application.
 
+# DOCUMENTATION WORK IN PROGRESS
+
 # Content
 - [Overview](#overview)
 - [Features](#features)
