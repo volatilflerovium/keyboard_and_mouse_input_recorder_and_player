@@ -1,0 +1,90 @@
+Documentation:
+
+//====================================================================
+
+Set up:
+
+Do it once:
+
+create a group km-recorder
+
+add yourself to the km-recorder group
+
+reload your session (log out log in)
+
+verify that you are in km-recorder group for the current session:
+
+$ id -Gn
+
+if you do not see km-recorder in the list, then you will have to reload your session
+(log out then log in)
+
+Everytime you want to use km-recorder/player
+
+then:
+
+sudo chown root:km-recorder /dev/uinput
+sudo chmod 720 /dev/uinput
+
+
+
+
+//====================================================================
+
+
+
+While playing a set of commands: bring the GUI to view, this will pause.
+
+DO NOT edit images used by ctrl commands!
+
+User need to have right to write to /dev/uinput
+
+Some example:
+
+/*
+ * When right click open a context menu, it need to wait for at least 400ms
+ * before the next leftclick-rightclick, otherwise, the second rightclick
+ * is lost:
+ *
+ * leftclick
+ * rightclick
+ * (wait 400ms)
+ * leftclick  (it does not matter how much this wait, if the previous is less than 400, the next rightclick is lost, maybe it is the time the (in the case of context menu) it is closed)
+ * rightclick
+ *
+ * In fact this behavious does not have to do with the current impletmentation
+ * one can check same behaviour with an actual mouse:
+ * 1) open context menu (right click) and leave it open
+ * 2) move the mouse on another area away from the menu
+ * 3) do a quick leftclick
+ * 4) and quickly a rightclick
+ *
+ * In fact this behavious depends on where the rightclick is done:
+ * leftclick-rightclick on a terminal, this behavious is present
+ * but no on Geany
+ * */
+
+/*
+ Consider that right click will display a context menu, if the next action 
+ (a left click anywhere else) is out of the menu, this will dismiss the menu
+ rather than do the left click.
+*/
+
+/*
+consider this sequence:
+
+right-click
+backspace
+text-command
+
+This will cause part of the text missing because right click would
+open a context menu if the application support one
+the back space will not do anything
+and the first letter if the text will close the context menu
+
+To replicate we can use a internet browser:
+right-click on the address bar will select everythig AND OPEN A CONTEXT MENU!!
+backlask will do nothing
+and the first letter of the text will close the context menu, the rest will be printed
+in the address bar
+

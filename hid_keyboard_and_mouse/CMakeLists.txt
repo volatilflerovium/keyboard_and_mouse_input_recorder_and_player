@@ -29,13 +29,16 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/cmake/utilities.cmake)
 
 message_yellow("Use -DBOARD_TYPE=pico build project for pico board. Default: pico_w")
 
-generate_server_definition_file("${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/")
+generate_server_definition_file(
+"${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/" 
+"${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/include/udp_server/"
+)
 
 set(PROJECT hid_keyboard_and_mouse_udp)
 
 if(PICO_BOARD STREQUAL "pico_w")
-	set(UDP_SERVER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/picow_udp_server.c")
-	set(UDP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w")
+	set(UDP_SERVER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/src/picow_udp_server.c")
+	set(UDP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/udp_server_for_pico_w/include")
 	set(UDP_HELPER_LIB "pico_cyw43_arch_lwip_threadsafe_background")
 endif()
 
@@ -50,7 +53,8 @@ target_include_directories(
 	${PROJECT} 
 	PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}
-	"${UDP_DIR}"
+	"${UDP_INCLUDE_DIR}"
+	"${UDP_INCLUDE_DIR}/udp_server"
 )
 
 if(PICO_BOARD STREQUAL "pico_w")

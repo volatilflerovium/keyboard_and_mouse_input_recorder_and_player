@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "udp_server_for_pico_w/picow_udp_server.h"
+#include "udp_server/picow_udp_server.h"
 
 #include "bsp/board_api.h"
 #include "tusb.h"
@@ -72,7 +72,7 @@ void hid_task(void);
 
 void hid_job(void);
 
-void hid_task_cb(uint8_t* buffer, uint16_t buffer_size);
+void hid_task_cb(const uint8_t* buffer, const uint16_t buffer_size);
 
 //=====================================================================
 //--------------------------------------------------------------------+
@@ -136,7 +136,7 @@ struct Mouse_Data
 	int8_t scrollH;
 };
 
-void hid_task_cb(uint8_t* buffer, uint16_t buffer_size)
+void hid_task_cb(const uint8_t* buffer, const uint16_t buffer_size)
 {
 	// Remote wakeup
 	if(tud_suspended()){
@@ -179,13 +179,13 @@ void hid_task_cb(uint8_t* buffer, uint16_t buffer_size)
 	else if(buffer[0]==MOUSE_START){
 		if(buffer_size<8){
 			uint8_t btn=buffer[1];
-			int8_t* buff=(int8_t*) buffer;
+			const int8_t* buff=(const int8_t*) buffer;
 			tud_hid_n_mouse_report(ITF_MOUSE, 0, btn, buff[2], buff[3], buff[4], buff[5]);
 			kbrd=true;
 		}
 		else if(buffer_size==8){
 			struct Mouse_Data mouse;
-			memcpy((void*)&mouse, (void*)buffer, 8);
+			memcpy((void*)&mouse, (const void*)buffer, 8);
 			tud_hid_n_abs_mouse_report(ITF_MOUSE, 0, mouse.btns, mouse.absX, mouse.absY, mouse.scrollV, mouse.scrollH);
 
 			kbrd=true;
