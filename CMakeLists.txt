@@ -79,31 +79,31 @@ add_subdirectory("${TINYUSB_LINK_DIR}")
 set(App kmRecPlayerApp)
 
 set(SOURCES1
-	main.cpp
-	km_recorder_player.cpp
-	error_reporting.cpp
-	keyboard_emulator.cpp
-	uinput_keyboard.cpp
-	tinyusb_keyboard.cpp
-	hid_manager.cpp
-	mouse_emulator.cpp
-	uinput_mouse.cpp
-	tinyusb_mouse.cpp
-	input_command.cpp
-	image_panel.cpp
-	command_parser.cpp
-	ext_scrolled_window.cpp
-	command_wrapper.cpp
-	event_definitions.cpp
-	wx_textctrl.cpp
-	extended_popup.cpp
-	utilities.cpp
-	file_scrolled_window.cpp
-	dedicated_popups.cpp
-	inputblocker.cpp
-	tinyusb_connector.cpp
-	settings_manager.cpp
-	key_conversion.cpp
+	src/main.cpp
+	src/km_recorder_player.cpp
+	src/error_reporting.cpp
+	src/keyboard_emulator.cpp
+	src/uinput_keyboard.cpp
+	src/tinyusb_keyboard.cpp
+	src/hid_manager.cpp
+	src/mouse_emulator.cpp
+	src/uinput_mouse.cpp
+	src/tinyusb_mouse.cpp
+	src/input_command.cpp
+	src/image_panel.cpp
+	src/command_parser.cpp
+	src/ext_scrolled_window.cpp
+	src/command_wrapper.cpp
+	src/event_definitions.cpp
+	src/wx_textctrl.cpp
+	src/extended_popup.cpp
+	src/utilities.cpp
+	src/file_scrolled_window.cpp
+	src/dedicated_popups.cpp
+	src/inputblocker.cpp
+	src/tinyusb_connector.cpp
+	src/settings_manager.cpp
+	src/key_conversion.cpp
 )
 
 add_executable(
@@ -124,6 +124,7 @@ target_include_directories(
 	"${App}"
 	#PRIVATE
 	PUBLIC
+	"include"
 	"${IMG_DIFF_LIB_DIR}/include"
 	"${TINYUSB_LINK_DIR}/include"
 )

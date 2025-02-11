@@ -1,4 +1,6 @@
 *~
+bin
+tinyusb_link_lib/lib/lib_tinyusb_link.a
 build/*
 DeployApp
 hid_keyboard_and_mouse/build/*
