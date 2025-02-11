@@ -1,12 +1,11 @@
-# keyboard_and_mouse_input_recorder_and_player
+# Keyboard and Mouse Input Recorder and Player
 
-Linux desktop application for recording keyboard and mouse input, save
-it and play it as you wish.
+Keyboard and Mouse Input Recorder and Player (kmRecPlayerApp) is a Linux desktop application 
+for recording sequence of keyboard and mouse input (HID), save it in a file and play it as you wish.
 
-Consider the following scenery: automatic testing of a GUI. So one could
-record which buttons to press and what keystroke to input and compare
-the result with a screenshot of the expected result, which is done by the
-same application.
+One potential application could be automatic GUI testing. So one could
+record a sequence of keyboard/mouse input on a GUI that is been testing.
+
 
 # DOCUMENTATION WORK IN PROGRESS
 
@@ -21,18 +20,24 @@ same application.
 
 # Overview
 
-This application allows you to record HID input from keyboard and mouse
+kmRecPlayerApp allows you to record HID input:
+- keyboard input: text input, shortcuts, keystroke, unicode input
+- mouse input: left/right click, drag/drop/selection
 and save it to a file and play them back as if someone were actually doing
-the input. It might be seems like a odd toy. However, in principle
-there are two scenarios where it can be useful:
-- Helping to test GUI:
-  When developing a GUI, one has to click buttons and input text. We could use
-  kmRecPlayerApp to record the input and play then back and compare it
-  with a screenshot.
-- Interacting with websites. Despite lot of plug-in and script off the shelve
-  to automatize login or download files from websites, it is true that
-  websites are increasingly blocking interaction with automatic tools.
+the input. Also, kmRecPlayerApp is equipped with a control command that 
+allows to take screenshots of a window or region in the screen and compare it 
+with a master image, so it can be set to terminate the sequence of input commands
+if the comparism fails.
 
+It might be seems like a odd toy. However, in principle
+there are two scenarios where it can be useful:
+- automatic GUI testing: when developing a GUI, one has to click buttons 
+  and input text. We could use kmRecPlayerApp these inputs and play it
+  put and play then back and compare the result with a master screenshot.
+- Interacting with websites: despite lot of plug-in and script off the shelf
+  to automatize interacting with a website, it is true that websites are increasingly
+  blocking interaction with these automatic tools.
+  
 # Features
 
 - Multiple recording modes
@@ -40,29 +45,30 @@ there are two scenarios where it can be useful:
   some input might change the way windows are position/displaying. Foe example
   a mouse right click usually display a context menu and the same menu will
   go away when it lose focus. In other cases it is stright forward. 
-- Save input commands
-- Loop
+- Save input commands.
+- Record input commands in the main screen context (globally) or in a particular window
+  context (locally).
+- Loop: we can repeat sequence of commands.
 - Image based control command: take a screenshot of an area in the screen
-  and use it to compare 
-- Ability to use /dev/uinput or tinyusb via serial port or udp socket.
+  and compare it to a master image. Set it to stop or continue the next input
+  command if the control command fails of passes.
+- Ability to use [tinyusb](https://docs.tinyusb.org/en/latest/index.html): as a proxy HID
+  device so it can set the input commands on the OS.
 
 # Examples
 
-The following examples are here only to illustrate the functionality of
-kmRecPlayerApp
+The following examples are here only to illustrate the functionality of kmRecPlayerApp
 
 - GUI development
 - download files
 - text processing
 
-
 # uinput
 
-The easy way to set the application is using /dev/uinput.
 Disclaimer: when using kmRecPlayerApp via /dev/uinput you should keep
 in mind the [File Descriptor Hijack vulnerability (CVE-2023-34059)](https://access.redhat.com/security/cve/cve-2023-34059).
 
-
+The easy way to set the application is using /dev/uinput.
 However you could use a dedicated VM.
 
 
@@ -105,10 +111,9 @@ via kmRecPlayerApp because in this way the keyboard and/or mouse input will
 be isolated to the VM without interfering with the host. For exaple
 if you are using kmRecPlayerApp to download files from internet.
 
-#
-Some words on the [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059).
-If we use the analogy where a house is the OS and a telephone in the house is /dev/uinput.
-CVE-2023-34059 is like allowing anybody in the house to use the telephone.
-
+# [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059).
+Do NOT say that exposing file descriptors to /dev/uinput will exposes your Linux OS,
+it actually says that if your system has already been compromised (a malicious actor might have
+access to the system) it could hijack the file descriptor to /dev/uinput to simulate user input.
 
 # License
