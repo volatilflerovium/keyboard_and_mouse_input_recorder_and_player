@@ -1,4 +1,5 @@
 *~
+debug_dir
 AppDir/*
 bin
 tinyusb_link_lib/lib/lib_tinyusb_link.a

@@ -1,46 +1,48 @@
 # Keyboard and Mouse Input Recorder and Player
 
-Keyboard and Mouse Input Recorder and Player (kmRecPlayerApp) is a Linux desktop application 
-for recording sequence of keyboard and mouse input (HID), save it in a file and play it as 
-you wish.
-
-One potential application could be automatic GUI testing. So one could
-record a sequence of keyboard/mouse input on a GUI that is been testing.
-
+Keyboard and Mouse Input Recorder and Player (KeyboardAndMouseRecorderPlayer) is a Linux 
+desktop application for recording sequence of keyboard and mouse input that can be save in
+a file and playing it at any time.
 
 # DOCUMENTATION WORK IN PROGRESS
 
 ## Content
 - [Overview](#overview)
+- [AppImage](#appimage)
 - [Features](#features)
 - [Examples](#examples)
 - [Interface Method](#interface-method)
 	- [uinput](#uinput)
-	- [tinyusb](#tinyusb)
+	- [TinyUSB](#TinyUSB)
 	- [vm](#vm)
 - [Things to be Considered](things-to-be-considered)
 - [License](#license)
 
 ## Overview
 
-kmRecPlayerApp allows you to record HID input:
-- keyboard input: text input, shortcuts, keystroke, unicode input
-- mouse input: left/right click, drag/drop/selection
+KeyboardAndMouseRecorderPlayer allows you to record HID input from:
+- keyboard: text input, shortcuts, keystroke, unicode input and
+- mouse: left/right click, drag/drop/selection
 and save it to a file and play them back as if someone were actually doing
-the input. Also, kmRecPlayerApp is equipped with a control command that 
+the input. Also, KeyboardAndMouseRecorderPlayer is equipped with a control command that 
 allows to take screenshots of a window or region in the screen and compare it 
 with a master image, so it can be set to terminate the sequence of input commands
 if the comparison fails.
 
-kmRecPlayerApp might look like a toy. However, in principle
-there are two scenarios where it can be useful:
+In principle there are two scenarios where it can be useful:
 - automatic GUI testing: when developing a GUI, one has to click buttons 
-  and input text. We could use kmRecPlayerApp these inputs and play it
+  and input text. We could use KeyboardAndMouseRecorderPlayer these inputs and play it
   put and play then back and compare the result with a master screenshot.
 - Interacting with websites: despite lot of plug-in and script off the shelf
   to automatize interacting with a website, it is true that websites are increasingly
   blocking interaction with these automatic tools.
-  
+
+## AppImage
+
+	If you do not want to build the application from scratch, you can download the
+	appimage version [KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/blob/main/KeyboardAndMouseRecorderPlayer-x86_64.AppImage)
+   and make it executable.
+
 ## Features
 
 - Multiple recording modes: recording a sequence of HID commands can be a bit 
@@ -55,85 +57,83 @@ there are two scenarios where it can be useful:
 - Image based control command: take a screenshot of an area in the screen
   and compare it to a master image. Set it to stop or continue the next input
   command if the control command fails of passes.
-- Ability to use [tinyusb](https://docs.tinyusb.org/en/latest/index.html): as a proxy HID
+- Ability to use [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html): as a proxy HID
   device so it can set the input commands on the OS.
 - Time padding
 
 ## Examples
 
-The following examples are here only to illustrate the functionality of kmRecPlayerApp
+The following examples are here only to illustrate the functionality of KeyboardAndMouseRecorderPlayer
 
 - GUI development
 - download files
 - text processing
 
 ## Interface Method
-kmRecPlayerApp can interface with the OS via two methods
-	- /dev/uinput
-	- tinyusb
 
-### uinput
+KeyboardAndMouseRecorderPlayer can interface with the OS via two methods
+- via file descriptor to /dev/uinput
+- [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html)
 
-Disclaimer: when using kmRecPlayerApp via /dev/uinput you should be aware of
+**_Disclaimer_**: when using KeyboardAndMouseRecorderPlayer via /dev/uinput you should be aware of
 the [File Descriptor Hijack vulnerability (CVE-2023-34059)](https://access.redhat.com/security/cve/cve-2023-34059).
+Notice that (CVE-2023-34059) Does NOT say that open file descriptors to /dev/uinput will 
+exposes your Linux OS, what it actually says is that if your system has already been 
+compromised with a malicious actor, this could hijack the file descriptor to /dev/uinput 
+to simulate user input.
 
-The easy way to set the application is using /dev/uinput.
-However you could use a dedicated VM.
+### /dev/uinput
 
+Using /dev/uinput is straight forward. 
 
-For it you will
-need to set the appropriate permission on it. Notice that because of the nature of
+et the appropriate permission on it. Notice that because of the nature of
 /dev/uinput, the permissions are not permanent.
 
-If you want to use /dev/uinput, you need the following steps:
-- create a new group and add you to these group
-
+- create a new group and add your username to this group
 ```
-# create my_uinput_group
+# groupadd the_new_group_name
+# usermod -aG the_new_group_name username
 ```
-then log out and log in so the new group take effect.
+Notice that group membership is re-read on login so You will have log out 
+and back in for this to take effect.
 
 Set the permissions
 ```
-# sudo chown root:my_uinput_group /dev/uinput;
+# sudo chown root:the_new_group_name /dev/uinput;
 chmod 720 /dev/uinput
 ```
-In some cases you will need to set 777. Remember these permissions are
-not permanent, they will be revoke at reboot.
-Alternatively you can use a device rule file (link).
+Permissin 720 should be enough, but in some cases you will need to set 777. 
+Remember these permissions are not permanent, they will be revoke at reboot.
+Alternatively you can use a device rule file.
 
+### TinyUSB
 
-### tinyusb
+TinyUSB is an open-source cross-platform USB Host/Device stack for embedded system.
+For this project use TinyUSB to emulate a phisical keyboard and mouse that can
+be used as the keyboard/mouse for KeyboardAndMouseRecorderPlayer.
 
-To remove the CVE-2023-34059 threat, you could install the companion project
-[hid_keyboard_and_mouse](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/tree/main/hid_keyboard_and_mouse)
-in a Raspberry Pi Pico W or Pico (both RP2040) making the Pico W into a usb keyboard/mouse
-[tinyusb](https://docs.tinyusb.org/en/latest/index.html). Then
-we can configure kmRecPlayerApp to send the commands to the Pico
-via UDP socket (only for Pico w) or via serial port (for Pico and Pico W).
-
-Currently the companion project build an image for Pico W.
+The directory [hid_keyboard_and_mouse](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/tree/main/hid_keyboard_and_mouse)
+has a project to build a image for RaspberryPi Pico W for this purpose. Then
+we can configure KeyboardAndMouseRecorderPlayer as UDP client to send the input commands
+to the installation of TinyUSB in the Pico W.
 
 ### vm
 
-Actually kmRecPlayerApp does not interface with any VM, however we can run kmRecPlayerApp on
-any Linux installation on a Virtual Machine. In this way you can use 
-/dev/uinput without any worry.
+It would be worthy to consider running KeyboardAndMouseRecorderPlayer on
+a Linux installation on a Virtual Machine, it this way, it will be on an isolated 
+enviroment in particular if it has to run long sequences of input. Beside in a VM, 
+the risk of [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059)
+should be minimal.
 
 ## Things to be Considered
 
-- kmRecPlayerApp will apply the input commands continuously as they are set. But 
-kmRecPlayerApp is not aware about the context of the commands, in other words,
+- KeyboardAndMouseRecorderPlayer will apply the input commands continuously as they are set. But 
+KeyboardAndMouseRecorderPlayer is not aware about the context of the commands, in other words,
 the commands will be input independently of which is the current active window
 in the screen. For example an input command might be considered to be applied on a
 particular window, but if the window is not active, that input command will be
 captured by whichever window is active at that moment. In this sense keep in mind
 that a particular input like a shortcut in a particular window might be set for a different
 action in another window. 
-
-- [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059).
-Do NOT say that exposing file descriptors to /dev/uinput will exposes your Linux OS,
-it actually says that if your system has already been compromised (a malicious actor might have
-access to the system) it could hijack the file descriptor to /dev/uinput to simulate user input.
 
 ## License
