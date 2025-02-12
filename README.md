@@ -39,9 +39,9 @@ In principle there are two scenarios where it can be useful:
 
 ## AppImage
 
-	If you do not want to build the application from scratch, you can download the
-	appimage version [KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/blob/main/KeyboardAndMouseRecorderPlayer-x86_64.AppImage)
-   and make it executable.
+If you do not want to build the application from scratch, you can download the
+appimage version [KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/blob/main/KeyboardAndMouseRecorderPlayer-x86_64.AppImage)
+and make it executable.
 
 ## Features
 
@@ -85,10 +85,6 @@ to simulate user input.
 ### /dev/uinput
 
 Using /dev/uinput is straight forward. 
-
-et the appropriate permission on it. Notice that because of the nature of
-/dev/uinput, the permissions are not permanent.
-
 - create a new group and add your username to this group
 ```
 # groupadd the_new_group_name
@@ -97,19 +93,19 @@ et the appropriate permission on it. Notice that because of the nature of
 Notice that group membership is re-read on login so You will have log out 
 and back in for this to take effect.
 
-Set the permissions
+- Set the permissions
 ```
 # sudo chown root:the_new_group_name /dev/uinput;
 chmod 720 /dev/uinput
 ```
-Permissin 720 should be enough, but in some cases you will need to set 777. 
+Permission 720 should be enough, but in some cases you will need to set 777. 
 Remember these permissions are not permanent, they will be revoke at reboot.
 Alternatively you can use a device rule file.
 
 ### TinyUSB
 
-TinyUSB is an open-source cross-platform USB Host/Device stack for embedded system.
-For this project use TinyUSB to emulate a phisical keyboard and mouse that can
+[TinyUSB](https://docs.TinyUSB.org/en/latest/index.html) is an open-source cross-platform USB Host/Device stack for embedded system.
+This project uses TinyUSB to emulate a phisical keyboard and mouse that can
 be used as the keyboard/mouse for KeyboardAndMouseRecorderPlayer.
 
 The directory [hid_keyboard_and_mouse](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/tree/main/hid_keyboard_and_mouse)
