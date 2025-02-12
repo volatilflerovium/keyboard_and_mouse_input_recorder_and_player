@@ -18,7 +18,7 @@ record a sequence of keyboard/mouse input on a GUI that is been testing.
 	- [uinput](#uinput)
 	- [tinyusb](#tinyusb)
 	- [vm](#vm)
-- [Things to Be Considered](things-to-be-considered)
+- [Things to be Considered](things-to-be-considered)
 - [License](#license)
 
 ## Overview
@@ -120,9 +120,9 @@ Actually kmRecPlayerApp does not interface with any VM, however we can run kmRec
 any Linux installation on a Virtual Machine. In this way you can use 
 /dev/uinput without any worry.
 
-## Things to be considered
+## Things to be Considered
 
-kmRecPlayerApp will apply the input commands continuously as they are set. But 
+- kmRecPlayerApp will apply the input commands continuously as they are set. But 
 kmRecPlayerApp is not aware about the context of the commands, in other words,
 the commands will be input independently of which is the current active window
 in the screen. For example an input command might be considered to be applied on a
@@ -131,7 +131,7 @@ captured by whichever window is active at that moment. In this sense keep in min
 that a particular input like a shortcut in a particular window might be set for a different
 action in another window. 
 
-## [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059).
+- [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059).
 Do NOT say that exposing file descriptors to /dev/uinput will exposes your Linux OS,
 it actually says that if your system has already been compromised (a malicious actor might have
 access to the system) it could hijack the file descriptor to /dev/uinput to simulate user input.
