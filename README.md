@@ -14,11 +14,11 @@ record a sequence of keyboard/mouse input on a GUI that is been testing.
 - [Overview](#overview)
 - [Features](#features)
 - [Examples](#examples)
-- [Interface Method](#interface method)
+- [Interface Method](#interface-method)
 	- [uinput](#uinput)
 	- [tinyusb](#tinyusb)
 	- [vm](#vm)
-- [Things to be considered](things to be considered)
+- [Things to Be Considered](things-to-be-considered)
 - [License](#license)
 
 ## Overview
