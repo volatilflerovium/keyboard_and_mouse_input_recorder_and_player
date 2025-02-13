@@ -40,9 +40,16 @@ In principle there are two scenarios where it can be useful:
 
 ## AppImage
 
-If you do not want to build the application from scratch, you can download the
-appimage version [KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/blob/main/KeyboardAndMouseRecorderPlayer-x86_64.AppImage)
-and make it executable.
+[KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/releases)
+is available as an AppImage which means "one app = one file", which you can download and run on your
+Linux system while you don't need a package manager and nothing gets changed
+in your system.
+
+AppImages are single-file applications that run on most Linux distributions.
+Download it, make it executable, and run! No need to install.
+No system libraries or system preferences are altered.
+Most AppImages run on recent versions of Arch Linux, CentOS, Debian, Fedora,
+openSUSE, Red Hat, Ubuntu, and other common desktop distributions.
 
 ## Features
 
