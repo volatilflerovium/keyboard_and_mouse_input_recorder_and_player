@@ -15,6 +15,7 @@ a file and playing it at any time.
 	- [uinput](#uinput)
 	- [TinyUSB](#TinyUSB)
 	- [vm](#vm)
+- [Control Command](#control-command)
 - [Things to be Considered](things-to-be-considered)
 - [License](#license)
 
@@ -120,6 +121,19 @@ a Linux installation on a Virtual Machine, it this way, it will be on an isolate
 enviroment in particular if it has to run long sequences of input. Beside in a VM, 
 the risk of [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059)
 should be minimal.
+
+## Control Command
+
+The most important feature of KeyboardAndMouseRecorderPlayer is its functionality
+to set a Control Command which takes a screenshot of a particular area of the
+screen or of a window and compares it to one previously taken in order to take decision
+to stop execution of next commands or continue. Without this, some commands
+might miss their target. This decision can be set
+as the image should be same or different. Imagine to setup a sequence of input
+commands to login to a website. Sometime it could take few seconds to login.
+We can set a Control Command to wait till the image of the login screen or
+any particular area, changes before applying the next input command.
+See the [user manual](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/blob/main/user_manual.pdf)
 
 ## Things to be Considered
 
