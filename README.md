@@ -120,7 +120,7 @@ It would be worthy to consider running KeyboardAndMouseRecorderPlayer on
 a Linux installation on a Virtual Machine, it this way, it will be on an isolated 
 enviroment in particular if it has to run long sequences of input. Beside in a VM, 
 the risk of [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059)
-should be minimal.
+should be irrelevant.
 
 ## Control Command
 
