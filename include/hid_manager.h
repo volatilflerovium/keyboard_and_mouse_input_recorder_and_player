@@ -18,8 +18,7 @@
 
 #include "enumerations.h"
 
-#include <string>
-#include <map>
+#include <functional>
 
 //====================================================================
 
@@ -30,8 +29,8 @@ class HIDManager
 		~HIDManager()=default;
 
 		static void SetHidEmulator(const InterfaceLink target, const char* portPath="", uint baudRate=0, bool isSerial=false);
-
 		static bool currentEmulator(HID_TARGET target);
+		static bool connectionError(std::function<void(const char*)> cbk);
 
 	private:
 		static HID_TARGET s_currentTarget;

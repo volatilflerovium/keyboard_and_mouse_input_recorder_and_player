@@ -70,8 +70,6 @@ void HIDManager::SetTinyusbEmulator(const char* alpha, uint numeric, bool isSeri
 
 	TinyusbConnector::setConnector(isSerial, alpha, numeric);
 
-	dbg("isActive: ", TinyusbConnector::s_connector->isActive());
-
 	static TinyUSBKeyboard keyboard;
 	static bool init=false;
 	if(!init){
@@ -83,6 +81,37 @@ void HIDManager::SetTinyusbEmulator(const char* alpha, uint numeric, bool isSeri
 
 	static TinyusbMouse mouse;
 	s_MouseEmulator=&mouse;
+}
+
+//--------------------------------------------------------------------
+
+bool HIDManager::connectionError(std::function<void(const char*)> cbk)
+{
+	if(s_currentTarget==HID_TARGET::NONE){
+		cbk("No interface in used.");
+		return false;
+	}
+	else {
+
+		if(std::strlen(s_KeyboardEmulator->getLastError())){
+			if(s_currentTarget==HID_TARGET::UINPUT){
+				cbk("Unable to interface with /dev/uinput\nbe sure you have permission to write to /dev/uinput.");
+			}
+			else if(s_currentTarget==HID_TARGET::TINYUSB){
+				cbk("Unable to set serial communication,\ncheck your serial port connection.");
+			}
+			return false;
+		}
+
+		if(s_currentTarget==HID_TARGET::TINYUSB){
+			if(!TinyusbConnector::doHandshake()){
+				cbk("Unable to connect via UDP. Please check the device is connected\nand ip/port are correct.");
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 //====================================================================

@@ -635,16 +635,9 @@ END_EVENT_TABLE()
 
 bool RecorderPlayerKM::checkConnection(const char* errorMessage)
 {
-	bool enableFunctionality=true;
-	if(std::strlen(s_KeyboardEmulator->getLastError())){
-		if(HIDManager::currentEmulator(HID_TARGET::UINPUT)){
-			wxMessageBox("Unable to interface with /dev/uinput\nbe sure you have permission to write to /dev/uinput.");
-		}
-		else if(HIDManager::currentEmulator(HID_TARGET::TINYUSB)){
-			wxMessageBox("Unable to set serial communication,\ncheck your serial port connection.");
-		}
-		enableFunctionality=false;
-	}
+	bool enableFunctionality=HIDManager::connectionError([](const char* msg){
+		wxMessageBox(msg);
+	});
 
 	if(HIDManager::currentEmulator(HID_TARGET::NONE)){
 		enableFunctionality=false;
@@ -1740,15 +1733,13 @@ void RecorderPlayerKM::initPopups()
 
 	m_interfacePopup= new ExtendedPopup(this, "Interface");
 
-	auto serialPortTag=m_interfacePopup->builder<wxStaticText>(wxID_ANY,
-								wxT("Serial port: "));
+	auto serialPortTag=m_interfacePopup->builder<wxStaticText>(wxID_ANY, "");
 
 	auto serialPort=m_interfacePopup->builder<wxTextCtrl>(wxID_ANY, "", wxDefaultPosition,
 							wxDefaultSize);
 	serialPort->ChangeValue(m_settings.alpha());
 	
-	auto baudRateTag=m_interfacePopup->builder<wxStaticText>(wxID_ANY,
-								wxT("Baud rate: "));
+	auto baudRateTag=m_interfacePopup->builder<wxStaticText>(wxID_ANY, "");
 
 	auto baudRate=m_interfacePopup->builder<wxTextCtrl>(wxID_ANY, "", wxDefaultPosition,
 							wxDefaultSize, 0, s_integerValidator);
@@ -1757,6 +1748,14 @@ void RecorderPlayerKM::initPopups()
 	if(m_settings.isTinyusbLink()){
 		serialPort->Enable();
 		baudRate->Enable();
+		if(m_settings.isUDP()){
+			serialPortTag->SetLabel(wxT("ip: "));
+			baudRateTag->SetLabel(wxT("port: "));		
+		}
+		else{
+			serialPortTag->SetLabel(wxT("serial port: "));
+			baudRateTag->SetLabel(wxT("baud rate: "));
+		}
 	}
 	else{
 		serialPort->Disable();
