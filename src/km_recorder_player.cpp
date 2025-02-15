@@ -127,21 +127,21 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 
 	exeCommand<124>("import 2>&1", [this](const std::string& output){
 		if(std::string::npos!=output.find("not found")){
-			wxMessageBox("import: command not found");
+			wxMessageBox("import: command not found.\nPlease intall ImageMagick.");
 			m_fullFunctionality=SystemStatus::PARTIAL;
 		}
 	});
 
 	exeCommand<124>("xwininfo -version 2>&1", [this](const std::string& output){
 		if(std::string::npos!=output.find("not found")){
-			wxMessageBox("xwininfo: command not found");
+			wxMessageBox("xwininfo: command not found.\nPlease install x11-utils.");
 			m_fullFunctionality=SystemStatus::PARTIAL;
 		}
 	});
 
 	exeCommand<124>("xprop -version 2>&1", [this](const std::string& output){
 		if(std::string::npos!=output.find("not found")){
-			wxMessageBox("xprop: command not found");
+			wxMessageBox("xprop: command not found.\nPlease install x11-utils.");
 			m_fullFunctionality=SystemStatus::PARTIAL;
 		}
 	});
@@ -1146,13 +1146,41 @@ void RecorderPlayerKM::SequenceFinished()
 
 void RecorderPlayerKM::takeScreenshotByWindow(const char* windowName)
 {
+	if(m_fullFunctionality==SystemStatus::PARTIAL){
+		return;
+	}
+
+	if(cstrCompare(windowName, FULL_SCREEN) || cstrCompare(windowName, "Full screen")){
+		wxMessageBox("Control command on Full Screen not available.");
+		return;
+	}
+
 	m_baseImage=imageId();
-	windowInputScreenshot(windowName, m_baseImage.c_str(), [this, windowName](const char* outputImage){
+	const char* outputImage=m_baseImage.c_str();
+
+	if(!windowExists(windowName)){
+		wxMsgBox("Window with name \"%s\" not exists.", windowName);
+		return;
+	}
+
+	ManagePanels(PanelStates::Playing);
+
+	bool taken=takeScreenshot(windowName, outputImage);
+
+	ManagePanels(PanelStates::Recording);
+
+	if(taken){
 		m_setupCtrlCmdPopup->loadRoi(m_baseImage.c_str(), "", windowName);
 		m_setupCtrlCmdPopup->Popup();
-	});
+	}
+	else{
+		removeImage(outputImage);
+		wxMsgBox("Window with name \"%s\" not exists.", windowName);
+	}
 }
- 
+
+
+
 //====================================================================
 
 void RecorderPlayerKM::windowLevelInput(const char* windowName)
@@ -1164,7 +1192,7 @@ void RecorderPlayerKM::windowLevelInput(const char* windowName)
 
 	if(cstrCompare(windowName, FULL_SCREEN) || cstrCompare(windowName, "Full screen")){
 		SetCurrentWindow(FULL_SCREEN);
-		m_fullMenu=false;//true;
+		m_fullMenu=true;
 		SetCurrentWindow();
 		ManagePanels(PanelStates::Recording);
 		return;
@@ -1885,7 +1913,7 @@ void RecorderPlayerKM::initPopups()
 			auto fieldCaption=screenshotPopup->builder<wxStaticText>(wxID_ANY,
 									wxT("Window name: "));
 
-			m_screenshotInput=screenshotPopup->builder<wxTextCtrl>(wxID_ANY, wxT("Full screen"),
+			m_screenshotInput=screenshotPopup->builder<wxTextCtrl>(wxID_ANY, wxT(""),
 								wxDefaultPosition, FromDIP(wxSize(250, 30)),
 								wxTE_LEFT, s_fileValidator);
 

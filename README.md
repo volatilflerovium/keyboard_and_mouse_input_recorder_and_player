@@ -1,15 +1,15 @@
 # Keyboard and Mouse Input Recorder and Player
 
-Keyboard and Mouse Input Recorder and Player (KeyboardAndMouseRecorderPlayer) is a Linux 
-desktop application for recording sequence of keyboard and mouse input that can be save in
-a file and playing it at any time.
-
-# DOCUMENTATION WORK IN PROGRESS
+Keyboard and Mouse Input Recorder and Player (KeyboardAndMouseRecorderPlayer)
+is a Linux desktop application for recording sequence of keyboard and mouse
+input that can be saved to a file and be played it at any time to simulate
+user input.
 
 ## Content
 - [Overview](#overview)
-- [AppImage](#appimage)
+- [Dependencies](#dependencies)
 - [Features](#features)
+- [AppImage](#appimage)
 - [Examples](#examples)
 - [Interface Method](#interface-method)
 	- [uinput](#uinput)
@@ -38,6 +38,32 @@ In principle there are two scenarios where it can be useful:
   to automatize interacting with a website, it is true that websites are increasingly
   blocking interaction with these automatic tools.
 
+## Dependencies
+
+In order to run KeyboardAndMouseRecorderPlayer, your system needs to meet
+the following dependencies:
+
+- import (is a member of the ImageMagick suite of tools)
+- x11-utils
+
+## Features
+
+- Multiple recording modes: recording a sequence of HID commands can be a bit 
+  challenging because some input might change the way windows are position/displaying. 
+  For example a right click of the mouse usually display a context menu and the same menu will
+  go away when it lose focus. In other cases it is straight forward. 
+- Save input commands: the recorded input commands can be save to a file that can be loaded
+  later.
+- Recording of input commands: with global context (on the context of the main screen)
+  or local context (on the context of a particular window).
+- Loop: we can repeat sequence of commands.
+- Image based control command: take a screenshot of an area in the screen
+  and compare it to a master image. Set it to stop or continue the next input
+  command if the control command fails of passes.
+- Ability to use [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html): as a proxy HID
+  device so it can set the input commands on the OS.
+- Time padding
+
 ## AppImage
 
 [KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/releases)
@@ -50,24 +76,6 @@ Download it, make it executable, and run! No need to install.
 No system libraries or system preferences are altered.
 Most AppImages run on recent versions of Arch Linux, CentOS, Debian, Fedora,
 openSUSE, Red Hat, Ubuntu, and other common desktop distributions.
-
-## Features
-
-- Multiple recording modes: recording a sequence of HID commands can be a bit 
-  challenging because some input might change the way windows are position/displaying. 
-  For example a right click of the mouse usually display a context menu and the same menu will
-  go away when it lose focus. In other cases it is straight forward. 
-- Save input commands: the recorded input commands can be save to a file that can be loaded
-  later.
-- Record input commands in the main screen context (globally) or in a particular window
-  context (locally).
-- Loop: we can repeat sequence of commands.
-- Image based control command: take a screenshot of an area in the screen
-  and compare it to a master image. Set it to stop or continue the next input
-  command if the control command fails of passes.
-- Ability to use [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html): as a proxy HID
-  device so it can set the input commands on the OS.
-- Time padding
 
 ## Examples
 

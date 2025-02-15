@@ -206,9 +206,6 @@ class RecorderPlayerKM : public wxFrame
 		void initPopups();
 		bool Pause();
 
-		template<typename FUNC>
-		void windowInputScreenshot(const char* windowName, const char* outputImage, FUNC cbk);
-
 		void OnModeSelection(CommandInputMode mode);
 
 		void SetCurrentWindow();
@@ -378,37 +375,6 @@ inline void RecorderPlayerKM::OnClose(wxCloseEvent& event)
 	}
 	event.Skip();
 	Destroy();
-}
-
-//--------------------------------------------------------------------
-
-template<typename FUNC>
-void RecorderPlayerKM::windowInputScreenshot(const char* windowName, const char* outputImage, FUNC cbk)
-{
-	if(m_fullFunctionality==SystemStatus::PARTIAL){
-		return;
-	}
-
-	if(!windowExists(windowName)){
-		wxMsgBox("Window with name \"%s\" not exists.", windowName);
-		return;
-	}
-
-	getWindowROI(windowName);
-
-	ManagePanels(PanelStates::Playing);
-
-	bool taken=takeScreenshot(windowName, outputImage);
-
-	ManagePanels(PanelStates::Recording);
-
-	if(taken){
-		cbk(outputImage);
-	}
-	else{
-		removeImage(outputImage);
-		wxMsgBox("Window with name \"%s\" not exists.", windowName);
-	}
 }
 
 //====================================================================
