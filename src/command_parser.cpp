@@ -100,6 +100,16 @@ BaseCommand* ParserBuilder(const std::string& line)
 			case CommandTypes::MouseSelection:
 				commandPtr=CmdBuilder<CommandTypes::MouseSelection>::Builder(run, description, wait, std::atoi(parts[3]), std::atoi(parts[4]), std::atoi(parts[5]), std::atoi(parts[6]), parts[7]);
 				break;
+			case CommandTypes::MouseDrag:
+				{
+					if(std::atoi(parts[3])<0){
+						commandPtr=CmdBuilder<CommandTypes::MouseDrag>::Builder(run, description, wait, std::atoi(parts[5]), std::atoi(parts[6]), parts[7]);
+					}
+					else{
+						commandPtr=CmdBuilder<CommandTypes::MouseDrag>::Builder(run, description, wait, std::atoi(parts[3]), std::atoi(parts[4]), std::atoi(parts[5]), std::atoi(parts[6]), parts[7]);
+					}
+				}
+				break;
 			case CommandTypes::Shortcut:
 				commandPtr=CmdBuilder<CommandTypes::Shortcut>::Builder(run, description, wait, parts[3]);
 				break;

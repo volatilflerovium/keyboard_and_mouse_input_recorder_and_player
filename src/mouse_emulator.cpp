@@ -102,28 +102,65 @@ void MouseEmulatorI::go2Position(const int absX, const int absY, ClientMousePosi
 
 //--------------------------------------------------------------------
 
-void MouseEmulatorI::drag(uint width, uint height)
+void MouseEmulatorI::select(uint absX, uint absY, uint width, uint height, ClientMousePosition getMousePosition)
 {
-	buttonDown(MOUSE_BUTTONS::LEFT);
-	move(width, height);
-	buttonUp(MOUSE_BUTTONS::LEFT);
-}
-
-//--------------------------------------------------------------------
-
-void MouseEmulatorI::drag(uint width, uint height, ClientMousePosition getMousePosition)
-{
-	buttonDown(MOUSE_BUTTONS::LEFT);
-	move(width, height);
-	buttonUp(MOUSE_BUTTONS::LEFT);
-}
-
-//--------------------------------------------------------------------
-
-void MouseEmulatorI::drag(int absX, int absY, uint width, uint height, ClientMousePosition getMousePosition)
-{
+	dbg(absX, " + ", width, " : ", absY, " + ", height);
 	go2Position(absX, absY, getMousePosition);
-	drag(width, height);
+	buttonDown(MOUSE_BUTTONS::LEFT);
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	moveAbs(absX+width, absY+height, getMousePosition);
+	buttonUp(MOUSE_BUTTONS::LEFT);
+}
+
+//--------------------------------------------------------------------
+
+void MouseEmulatorI::drag(uint startX, uint startY, uint endX, uint endY, ClientMousePosition getMousePosition)
+{
+	go2Position(startX, startY, getMousePosition);
+	buttonDown(MOUSE_BUTTONS::LEFT);
+	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	moveAbs(endX, endY, getMousePosition);
+	buttonUp(MOUSE_BUTTONS::LEFT);
+}
+//--------------------------------------------------------------------
+
+void MouseEmulatorI::moveAbs(const int absX, const int absY, ClientMousePosition getMousePosition)
+{
+	int pX;
+	int pY;
+	getMousePosition(pX, pY);
+	int relX=absX-pX;
+	int relY=absY-pY;
+	int sigX=relX<0? -1 : 1;
+	int sigY=relY<0? -1 : 1;
+	int ax, ay;
+	int tries=0;
+	while(true && tries++<MAX_TRIES){
+		ax=0;
+		if(sigX*relX>LOW){
+			ax=sigX*THR;
+			relX=sigX*std::abs(sigX*relX-THR);
+		}
+
+		ay=0;
+		if(sigY*relY>LOW){
+			ay=sigY*THR;		
+			relY=sigY*std::abs(sigY*relY-THR);
+		}
+
+		setPosition(ax, ay);
+		getMousePosition(pX, pY);
+		relX=absX-pX;
+		relY=absY-pY;
+		sigX=relX<0? -1 : 1;
+		sigY=relY<0? -1 : 1;
+
+		if(sigX*relX<THR && sigY*relY<THR){
+			break;
+		}
+	}
+
+	setPosition(relX, relY);
 }
 
 //====================================================================

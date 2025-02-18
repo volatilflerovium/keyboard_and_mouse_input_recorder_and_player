@@ -89,9 +89,16 @@ struct CmdType2Bdr<CommandTypes::MouseRightBtn>
 };
 
 template<>
-struct CmdType2Bdr<CommandTypes::MouseSelection> // this cover drag command too
+struct CmdType2Bdr<CommandTypes::MouseSelection>
 {
 	typedef MouseSelectCommand Cmd;
+};
+
+
+template<>
+struct CmdType2Bdr<CommandTypes::MouseDrag>
+{
+	typedef MouseDragCommand Cmd;
 };
 
 //====================================================================

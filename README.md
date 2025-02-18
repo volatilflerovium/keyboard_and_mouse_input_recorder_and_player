@@ -103,19 +103,19 @@ to simulate user input.
 Using /dev/uinput is straight forward. 
 - create a new group and add your username to this group
 ```
-# groupadd the_new_group_name
-# usermod -aG the_new_group_name username
+# groupadd <new-group>
+# usermod -aG <new-group> <username>
 ```
 Notice that group membership is re-read on login so You will have log out 
 and back in for this to take effect.
 
 - Set the permissions
 ```
-# sudo chown root:the_new_group_name /dev/uinput;
+# sudo chown root:<new-group> /dev/uinput;
 chmod 720 /dev/uinput
 ```
 Permission 720 should be enough, but in some cases you will need to set 777. 
-Remember these permissions are not permanent, they will be revoke at reboot.
+Remember **_these permissions are not permanent, they will be revoke at reboot_**.
 Alternatively you can use a device rule file.
 
 ### TinyUSB

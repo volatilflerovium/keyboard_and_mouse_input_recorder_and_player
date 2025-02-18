@@ -39,30 +39,28 @@ class MouseEmulatorI : public ErrorReporting
 
 		void clickLeftBtn();
 		void clickRightBtn();
+
 		/*
 		 *	Move mouse to the relative position (dy, dy) in small steps
-		 * 
 		 * */
 		void move(const int dx, const int dy);
 
 		/*
 		 * Will move the mouse to the absolute position (absX, absY)
-		 * 
 		 * */
 		virtual void go2Position(const int absX, const int absY, ClientMousePosition getMousePosition);
 
 		/*
-		 * Drag the mouse width units on X and height units on Y relative
-		 * to the current mouse position.
+		 * Select rectangle: (absX, absY, width, height)
+		 * Note that width and height can be negative values
 		 * */
-		void drag(uint width, uint height);
-		void drag(uint width, uint height, ClientMousePosition getMousePosition);
+		void select(uint absX, uint absY, uint width, uint height, ClientMousePosition getMousePosition);
 
 		/*
-		 * Drag the mouse width units on X and height units on Y from the
-		 * absolute position (absX, absY).
+		 * Drag the mouse from absolute position (startX, startY)
+		 * to absolute position (endX, endY)
 		 * */
-		void drag(int absX, int absY, uint width, uint height, ClientMousePosition getMousePosition);
+		void drag(uint startX, uint startY, uint endX, uint endY, ClientMousePosition getMousePosition);
 		
 		//void scroll(const int x, const int y);
 
@@ -74,15 +72,14 @@ class MouseEmulatorI : public ErrorReporting
 			THR=LOW+1,
 		};
 
-		//virtual int getMouseButton(const MOUSE_BUTTONS btn)=0;
-
 		/*
 		 * Move the mouse to the relative position (dx, dy)
 		 * */
 		virtual void setPosition(const int dx, const int dy)=0;
-
 		virtual void buttonDown(MOUSE_BUTTONS btn)=0;
 		virtual void buttonUp(MOUSE_BUTTONS btn)=0;
+
+		void moveAbs(const int absX, const int absY, ClientMousePosition getMousePosition);
 };
 
 //--------------------------------------------------------------------

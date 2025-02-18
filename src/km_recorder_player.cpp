@@ -567,6 +567,7 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_MENU(WX::MENU::SCREENSHOT_CMD, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::START_ROI, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::START_DRAGGING, RecorderPlayerKM::OnMenuClick)
+	EVT_MENU(WX::MENU::DRAG_HERE, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SUBMENU_REPEAT_ALL, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SUBMENU_REPEAT_LAST, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SUBMENU_AFTER_ME, RecorderPlayerKM::OnMenuClick)
@@ -709,8 +710,16 @@ void RecorderPlayerKM::OnSelection(wxCommandEvent& event)
 			}
 		}
 		else{
-			addCommand(MouseSelectCommand::Builder("Mouse grab/drop command",
-			m_settings.getTimePadding(), m_selectionRect.m_posX, m_selectionRect.m_posY, m_selectionRect.m_width, m_selectionRect.m_height, m_currentWindow));
+			int endX=m_selectionRect.m_posX+m_selectionRect.m_width;
+			int endY=m_selectionRect.m_posY+m_selectionRect.m_height;
+
+			addCommand(MouseDragCommand::Builder(
+				"Mouse grab/drop",
+				m_settings.getTimePadding(),
+				m_selectionRect.m_posX,
+				m_selectionRect.m_posY,
+				endX, endY,
+				m_currentWindow));
 		}
 	}
 	
@@ -842,11 +851,17 @@ void RecorderPlayerKM::OnSetRoiType(wxCommandEvent& evt)
 
 	if(selection==SELECT){
 		if(m_selectionRect.isNoTrivial()){
-			addCommand(MouseSelectCommand::Builder("Mouse select command",
-			m_settings.getTimePadding(),
-			m_selectionRect.m_posX, m_selectionRect.m_posY,
-			m_selectionRect.m_width, m_selectionRect.m_height,
-			m_currentWindow));
+
+			dbg(m_selectionRect.m_posX, " ", m_selectionRect.m_posY, " ",
+				m_selectionRect.m_width, " ", m_selectionRect.m_height);
+
+			addCommand(MouseSelectCommand::Builder("Mouse select",
+				m_settings.getTimePadding(),
+				m_selectionRect.m_posX, m_selectionRect.m_posY,
+				m_selectionRect.m_width, m_selectionRect.m_height,
+				m_currentWindow
+				)
+			);
 		}
 	}
 	else if(selection==WATCH_ROI){
@@ -882,6 +897,10 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 			break;
 		case WX::MENU::START_DRAGGING:
 			m_inputBlocker->drawLine();
+			break;
+		case WX::MENU::DRAG_HERE:
+			addCommand(MouseDragCommand::Builder( "Mouse grab/drop to here", m_settings.getTimePadding(),
+				m_click.x, m_click.y, m_currentWindow));
 			break;
 		case WX::MENU::CLOSE_MENU:
 			ManagePanels(PanelStates::Initial);
@@ -973,19 +992,24 @@ void RecorderPlayerKM::mkMenu(bool allowScreenshot, bool fullMenu)
 			menu.Append(WX::MENU::WINDOW_INPUT, wxT("Input on a window"));
 				menu.Enable(WX::MENU::WINDOW_INPUT, m_fullFunctionality==SystemStatus::OK);
 
-			menu.Append(WX::MENU::OPEN_LOOP, wxT("Open Loop"));
-				menu.Enable(WX::MENU::OPEN_LOOP, !m_indentation);
-			menu.Append(WX::MENU::CLOSE_LOOP, wxT("Close Loop"));
-				menu.Enable(WX::MENU::CLOSE_LOOP, m_indentation);
+			if(!m_indentation){
+				menu.Append(WX::MENU::OPEN_LOOP, wxT("Open Loop"));
+			}
+			else{
+				menu.Append(WX::MENU::CLOSE_LOOP, wxT("Close Loop"));
+			}
 
 			menu.Append(WX::MENU::MOVE_HERE, wxT("Move Here"));
 			menu.Append(WX::MENU::DO_LEFT_CLICK, wxT("Left Click Here"));
 			menu.Append(WX::MENU::DO_RIGHT_CLICK, wxT("Right Click Here"));
+			menu.Append(WX::MENU::START_ROI, wxT("Select Area"));
+			menu.Append(WX::MENU::START_DRAGGING, wxT("Start Dragging"));
+			menu.Append(WX::MENU::DRAG_HERE, wxT("Drag/Drop Here"));
+				menu.Enable(WX::MENU::DRAG_HERE, false);
+			menu.Append(WX::MENU::DISPLAY_KBOARD, wxT("Text and Keyboard Input"));
 			menu.Append(WX::MENU::SCREENSHOT_CMD, wxT("Take Screenshot"));
 				menu.Enable(WX::MENU::SCREENSHOT_CMD, allowScreenshot && m_fullFunctionality==SystemStatus::OK);
-			menu.Append(WX::MENU::START_ROI, wxT("Select Rectangle"));
-			menu.Append(WX::MENU::START_DRAGGING, wxT("Start Dragging"));
-			menu.Append(WX::MENU::DISPLAY_KBOARD, wxT("Text and Keyboard Input"));
+
 			{
 				wxMenu* subMenu=new wxMenu;
 				subMenu->AppendCheckItem(WX::MENU::SUBMENU_QUIET, wxT("Quiet"));

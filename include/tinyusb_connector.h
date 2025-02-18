@@ -33,7 +33,7 @@ struct TinyusbConnector
 	static void sendAndWait(void* data, uint dataSize)
 	{
 		s_connector->send(data, dataSize);
-		if(s_connector->receive(500)){
+		if(s_connector->receive(600)){
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 	}

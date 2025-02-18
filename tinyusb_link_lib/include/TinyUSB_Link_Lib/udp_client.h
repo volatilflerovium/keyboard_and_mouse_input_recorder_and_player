@@ -87,7 +87,6 @@ inline ssize_t UDPClient::receive(void* buffer, const size_t bufferSize)
 {
 	auto r=::recv(m_fd, buffer, bufferSize, 0);
 	m_lastError=errno;
-	//dbg("r: ", r, " ", (char*)buffer);
 	return r;
 }
 
@@ -96,8 +95,6 @@ inline ssize_t UDPClient::receive(void* buffer, const size_t bufferSize)
 inline ssize_t UDPClient::send(const void* data, const size_t dataSize)
 {
 	auto r=::send(m_fd, data, dataSize, 0);
-	//m_lastError=errno;
-	//dbg("send: ", r, " error: ", errno, " ", strerror(m_lastError));
 	return r;
 }
 

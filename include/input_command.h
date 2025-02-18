@@ -67,6 +67,7 @@ enum class CommandTypes
 	Screenshot,// alias for Ctrl
 	Unicode,
 	Shortcut,
+	MouseDrag,
 };
 
 enum class CommandInputTypes
@@ -480,7 +481,7 @@ class MouseRightBtnCommand : public InputCommand, public WindowOffset
 class MouseSelectCommand : public InputCommand, public WindowOffset
 {
 	public:
-		MouseSelectCommand(const char* description, int wait, int posX, int posY, int width, int height, const char* windowName);
+		MouseSelectCommand(const char* description, int wait, uint posX, uint posY, int width, int height, const char* windowName);
 
 		virtual ~MouseSelectCommand()=default;
 
@@ -497,20 +498,32 @@ class MouseSelectCommand : public InputCommand, public WindowOffset
 		uint m_statusCode;
 };
 
+//====================================================================
 
-class MouseSelectCommand2 : public InputCommand, public WindowOffset
+class MouseDragCommand : public InputCommand, public WindowOffset
 {
 	public:
-		MouseSelectCommand2(const char* description, int wait, int endX, int endY, const char* windowName);
+		MouseDragCommand(const char* description, int wait, int startX, int startY, int endX, int endY, const char* windowName);
+		MouseDragCommand(const char* description, int wait, int endX, int endY, const char* windowName);
 
-		virtual ~MouseSelectCommand2()=default;
+		virtual ~MouseDragCommand()=default;
+
+		static InputCommand* Builder(const char* description, int wait, int startX, int startY, int endX, int endY, const char* windowName)
+		{
+			if(startX<0){				
+				return new MouseDragCommand(description, wait, endX, endY, windowName);
+			}
+			return new MouseDragCommand(description, wait, startX, startY, endX, endY, windowName);
+		}
 
 		static InputCommand* Builder(const char* description, int wait, int endX, int endY, const char* windowName)
 		{
-			return new MouseSelectCommand2(description, wait, endX, endY, windowName);
+			return new MouseDragCommand(description, wait, endX, endY, windowName);
 		}
 
 	private:
+		int m_startX;
+		int m_startY;
 		int m_endX; //relative to the current window
 		int m_endY;
 		uint m_statusCode;

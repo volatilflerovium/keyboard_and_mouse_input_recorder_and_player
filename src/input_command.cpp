@@ -306,8 +306,8 @@ MouseRightBtnCommand::MouseRightBtnCommand(const char* description, int wait, in
 }
 
 //====================================================================
-
-MouseSelectCommand::MouseSelectCommand(const char* description, int wait, int posX, int posY, int width, int height, const char* windowName)
+//*
+MouseSelectCommand::MouseSelectCommand(const char* description, int wait, uint posX, uint posY, int width, int height, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_posX(posX)
@@ -321,53 +321,7 @@ MouseSelectCommand::MouseSelectCommand(const char* description, int wait, int po
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_posX, m_posY)){
 				m_statusCode=ExitCode::OK;
-				s_MouseEmulator->drag(m_absoluteX, m_absoluteY, m_width, m_height, [](int& pX, int& pY){
-					wxPoint mousePosition=wxGetMousePosition();
-					pX=mousePosition.x;
-					pY=mousePosition.y;
-				});
-			}
-		}
-	};
-
-	int ID=static_cast<int>(CommandTypes::MouseSelection);
-
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_posX, m_posY, m_width, m_height, m_windowName);
-	};
-}
-
-MouseSelectCommand2::MouseSelectCommand2(const char* description, int wait, int endX, int endY, const char* windowName)
-:InputCommand(description, wait)
-, WindowOffset(windowName)
-, m_endX(endX)
-, m_endY(endY)
-{
-	/*
-	 * Notice that if the current mouse changed is not the same as the
-	 * position of it when the last mouse command exit (it was moved accidently)
-	 * we might get different result. Therefore it would be better to keep
-	 * tract of the mouse position according to the last mouse command executed.
-	 * 
-	 * */
-	m_cmd=[this](){
-		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
-		if(windowExists()){
-			m_statusCode=ExitCode::OUT_OF_BOUND;
-			if(isTargetValid(m_endX, m_endY)){
-				m_statusCode=ExitCode::OK;
-
-				wxPoint mousePosition=wxGetMousePosition();
-				int startX=mousePosition.x;
-				int startY=mousePosition.y;
-
-				WindowRect rect=getWindowRect(m_windowName.c_str(), true);
-				int endAbsoluteX=m_endX+rect.m_x;
-				int endAbsoluteY=m_endY+rect.m_y;
-				int width=endAbsoluteX-startX;
-				int height=endAbsoluteY-startY;
-
-				s_MouseEmulator->drag(startX, startY, width, height, [](int& pX, int& pY){
+				s_MouseEmulator->select(m_absoluteX, m_absoluteY, m_width, m_height, [](int& pX, int& pY){
 					wxPoint mousePosition=wxGetMousePosition();
 					pX=mousePosition.x;
 					pY=mousePosition.y;
@@ -380,7 +334,89 @@ MouseSelectCommand2::MouseSelectCommand2(const char* description, int wait, int 
 	int ID=static_cast<int>(CommandTypes::MouseSelection);
 
 	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_endX, m_endY, m_windowName);
+		return ToString2(ID, m_description, m_run, m_posX, m_posY, m_width, m_height, m_windowName);
+	};
+}
+
+//====================================================================
+
+MouseDragCommand::MouseDragCommand(const char* description, int wait, int startX, int startY, int endX, int endY, const char* windowName)
+:InputCommand(description, wait)
+, WindowOffset(windowName)
+, m_startX(startX)
+, m_startY(startY)
+, m_endX(endX)
+, m_endY(endY)
+{
+	m_cmd=[this](){
+		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
+		if(windowExists()){
+			m_statusCode=ExitCode::OUT_OF_BOUND;
+			if(isTargetValid(m_startX, m_startY)){
+				int absStartX=m_absoluteX;
+				int absStartY=m_absoluteY;
+				if(isTargetValid(m_endX, m_endY)){
+					m_statusCode=ExitCode::OK;
+					int absEndX=m_absoluteX;
+					int absEndY=m_absoluteY;
+
+					s_MouseEmulator->drag(absStartX, absStartY, absEndX, absEndY, [](int& pX, int& pY){
+						wxPoint mousePosition=wxGetMousePosition();
+						pX=mousePosition.x;
+						pY=mousePosition.y;
+					});
+				}
+			}
+		}
+		MouseCmdExitPosition::setExitPosition();
+	};
+
+	int ID=static_cast<int>(CommandTypes::MouseDrag);
+
+	m_strCmd=[this, ID](){
+		return ToString2(ID, m_description, m_run, m_startX, m_startY, m_endX, m_endY, m_windowName);
+	};
+}
+
+//--------------------------------------------------------------------
+
+MouseDragCommand::MouseDragCommand(const char* description, int wait, int endX, int endY, const char* windowName)
+:InputCommand(description, wait)
+, WindowOffset(windowName)
+, m_startX(-1)
+, m_startY(-1)
+, m_endX(endX)
+, m_endY(endY)
+{
+	/*
+	 * Notice that if the current mouse position is not the same as the
+	 * position of it when the last mouse command exit (it was moved accidently)
+	 * we might get different result. Therefore it would be better to keep
+	 * tract of the mouse position according to the last mouse command executed.
+	 * */
+	m_cmd=[this](){
+		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
+		if(windowExists()){
+			m_statusCode=ExitCode::OUT_OF_BOUND;
+			if(isTargetValid(m_endX, m_endY)){
+				m_statusCode=ExitCode::OK;
+				int startX=MouseCmdExitPosition::s_x;
+				int startY=MouseCmdExitPosition::s_y;
+
+				s_MouseEmulator->drag(startX, startY, m_absoluteX, m_absoluteY, [](int& pX, int& pY){
+					wxPoint mousePosition=wxGetMousePosition();
+					pX=mousePosition.x;
+					pY=mousePosition.y;
+				});
+			}
+		}
+		MouseCmdExitPosition::setExitPosition();
+	};
+
+	int ID=static_cast<int>(CommandTypes::MouseDrag);
+
+	m_strCmd=[this, ID](){
+		return ToString2(ID, m_description, m_run, -1, -1, m_endX, m_endY, m_windowName);
 	};
 }
 
