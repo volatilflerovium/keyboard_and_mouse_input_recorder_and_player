@@ -21,7 +21,7 @@ if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL "8.3.0")
 
 	if(NOT(OPENCV_PATH))
 		message(FATAL_ERROR "Set opencv cmake dir path: OPENCV_PATH")
-	end()
+	endif()
 
 	find_package(OpenCV 4.0.0 REQUIRED 
 		PATHS "${OPENCV_PATH}" NO_DEFAULT_PATH
