@@ -109,7 +109,7 @@ void SerialPort::closeSerial()
 ConnectorI* SerialPort::getConnector(const char* serialPortPath, unsigned int baudRate)
 {
 	static SerialPort serial;
-	if(serial.isSameSerial(serialPortPath, baudRate)){
+	if(!serial.isSameSerial(serialPortPath, baudRate)){
 		serial.reset(serialPortPath, 1, baudRate);
 	}
 	return &serial;

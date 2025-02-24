@@ -31,6 +31,7 @@ KeyboardEmulatorI* s_KeyboardEmulator=nullptr;
 MouseEmulatorI* s_MouseEmulator=nullptr;
 
 HID_TARGET HIDManager::s_currentTarget=HID_TARGET::NONE;
+bool HIDManager::s_isSerial=false;
 
 //====================================================================
 
@@ -60,6 +61,7 @@ void HIDManager::SetUinputEmulator()
 
 	static UinputMouse mouse;
 	s_MouseEmulator=&mouse;
+	s_isSerial=false;
 }
 
 //--------------------------------------------------------------------
@@ -69,7 +71,7 @@ void HIDManager::SetTinyusbEmulator(const char* alpha, uint numeric, bool isSeri
 	s_currentTarget=HID_TARGET::TINYUSB;
 
 	TinyusbConnector::setConnector(isSerial, alpha, numeric);
-
+	s_isSerial=isSerial;
 	static TinyUSBKeyboard keyboard;
 	static bool init=false;
 	if(!init){
@@ -85,33 +87,52 @@ void HIDManager::SetTinyusbEmulator(const char* alpha, uint numeric, bool isSeri
 
 //--------------------------------------------------------------------
 
-bool HIDManager::connectionError(std::function<void(const char*)> cbk)
+int HIDManager::connectionError()
 {
 	if(s_currentTarget==HID_TARGET::NONE){
-		cbk("No interface in used.");
-		return false;
+		return 1;
 	}
-	else {
-
-		if(std::strlen(s_KeyboardEmulator->getLastError())){
-			if(s_currentTarget==HID_TARGET::UINPUT){
-				cbk("Unable to interface with /dev/uinput\nbe sure you have permission to write to /dev/uinput.");
-			}
-			else if(s_currentTarget==HID_TARGET::TINYUSB){
-				cbk("Unable to set serial communication,\ncheck your serial port connection.");
-			}
-			return false;
+	if(std::strlen(s_KeyboardEmulator->getLastError())){
+		if(s_currentTarget==HID_TARGET::UINPUT){
+			return 2;
 		}
-
-		if(s_currentTarget==HID_TARGET::TINYUSB){
-			if(!TinyusbConnector::doHandshake()){
-				cbk("Unable to connect via UDP. Please check the device is connected\nand ip/port are correct.");
-				return false;
-			}
+		if(s_isSerial){
+			return 3;
 		}
 	}
 
-	return true;
+	if(s_currentTarget==HID_TARGET::TINYUSB){
+		if(!TinyusbConnector::doHandshake()){
+			if(s_isSerial){
+				return 3;
+			}
+			return 4;
+		}
+	}
+
+	return 0;
+}
+
+//--------------------------------------------------------------------
+
+const char* HIDManager::verboseError(int errorCode)
+{
+	if(errorCode==1){
+		return "No interface in used.";
+	}
+
+	if(errorCode==2){
+		return "Unable to use interface /dev/uinput\nbe sure you have permission to write to /dev/uinput.";
+	}
+
+	if(errorCode==3){
+		return "Unable to set serial communication,\ncheck your serial port connection.";
+	}
+
+	if(errorCode==4){
+		return "Unable to connect via UDP. Please check the device is connected\nand ip/port are correct.";
+	}
+	return "Unknown";
 }
 
 //====================================================================

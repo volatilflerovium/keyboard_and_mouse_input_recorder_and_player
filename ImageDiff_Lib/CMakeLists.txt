@@ -18,8 +18,13 @@ endif()
 add_compile_options("-O3")
 
 if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL "8.3.0")
+
+	if(NOT(OPENCV_PATH))
+		message(FATAL_ERROR "Set opencv cmake dir path: OPENCV_PATH")
+	end()
+
 	find_package(OpenCV 4.0.0 REQUIRED 
-		PATHS "/home/dan/Libs/share/release/lib/cmake" NO_DEFAULT_PATH
+		PATHS "${OPENCV_PATH}" NO_DEFAULT_PATH
 		COMPONENTS imgproc highgui
 	)
 else()

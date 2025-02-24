@@ -30,10 +30,12 @@ class HIDManager
 
 		static void SetHidEmulator(const InterfaceLink target, const char* portPath="", uint baudRate=0, bool isSerial=false);
 		static bool currentEmulator(HID_TARGET target);
-		static bool connectionError(std::function<void(const char*)> cbk);
+		static int connectionError();
+		static const char* verboseError(int errorCode);
 
 	private:
 		static HID_TARGET s_currentTarget;
+		static bool s_isSerial;
 
 		static void SetDummyEmulator();
 		static void SetUinputEmulator();

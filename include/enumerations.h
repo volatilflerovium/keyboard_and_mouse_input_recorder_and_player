@@ -52,6 +52,7 @@ namespace WX
 		SETTINGS,
 		DEMO,
 		DELETE_FILE,
+		PROGRESS_TIMER,
 		_LAST,
 	};
 

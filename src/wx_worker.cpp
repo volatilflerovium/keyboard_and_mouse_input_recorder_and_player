@@ -7,22 +7,30 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE. 
 * 
-* Some custom event definitions                                      *
+* class WxWorker                                                     *
 *         	                                                         *
 * Version: 1.0                                                       *
-* Date:    09-02-2025                                                *
+* Date:    24-02-2025                                                *
 * Author:  Dan Machado                                               *
 **********************************************************************/
-#include "event_definitions.h"
+#include "wx_worker.h"
 
-wxDEFINE_EVENT(wxEVT_CUSTOM_EVENT, wxCommandEvent);
+#include "hid_manager.h"
 
-wxDEFINE_EVENT(wxEVT_SELECTION_EVENT, wxCommandEvent);
+//--------------------------------------------------------------------
 
-wxDEFINE_EVENT(wxEVT_COMMAND_MYTHREAD_COMPLETED, wxThreadEvent);
+wxThread::ExitCode WxWorker::Entry()
+{
+	int errorCode=HIDManager::connectionError();
 
-wxDEFINE_EVENT(wxEVT_POPUP_DISAPPEARED, wxCommandEvent);					
+	if(errorCode>0){
+		fireEvent(EvtID::CONNECTION_FAILED, HIDManager::verboseError(errorCode));
+	}
+	else{
+		fireEvent(EvtID::CONNECTION_OK);
+	}
 
-wxDEFINE_EVENT(wxEVT_TXTCTRL_COMMAND, wxCommandEvent);
+	return 0;
+}
 
-wxDEFINE_EVENT(wxEVT_CUSTOM_THREAD_EVENT, wxThreadEvent);
+//--------------------------------------------------------------------

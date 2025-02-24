@@ -53,11 +53,9 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	add_definitions(-DDEBUG_DIR="${CMAKE_SOURCE_DIR}")
 endif()
 
-
 add_compile_options("-O3")
 
 #--------------------------------------------------------------------- 
-
 
 set(IMG_DIFF_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ImageDiff_Lib")
 
@@ -104,6 +102,8 @@ set(SOURCES1
 	src/tinyusb_connector.cpp
 	src/settings_manager.cpp
 	src/key_conversion.cpp
+	src/progress_bar.cpp
+	src/wx_worker.cpp
 )
 
 add_executable(

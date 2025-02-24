@@ -43,7 +43,7 @@ In principle there are two scenarios where it can be useful:
 In order to run KeyboardAndMouseRecorderPlayer, your system needs to meet
 the following dependencies:
 
-- import (is a member of the ImageMagick suite of tools)
+- imagemagick
 - x11-utils
 
 ## Features

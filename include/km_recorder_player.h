@@ -33,6 +33,8 @@
 
 class EditCtrlCmdPopup;
 class AddCmdPopup;
+class ProgressBar;
+class WxWorker;
 
 class RecorderPlayerKM : public wxFrame
 {
@@ -141,6 +143,8 @@ class RecorderPlayerKM : public wxFrame
 
 		wxButton* m_updateCtrlCmdBtn;
 		wxButton* m_addScreenshotCondition;
+		wxButton* m_setConnectionBtn;
+		
 		wxBitmapButton* m_saveBtn;
 		wxBitmapButton* m_moveDnBtn;
 		wxBitmapButton* m_moveUpBtn;
@@ -175,6 +179,7 @@ class RecorderPlayerKM : public wxFrame
 		AddCmdPopup* m_setupCtrlCmdPopup;
 		EditCtrlCmdPopup* m_editCtrlCmdPopup;
 		ExtendedPopup* m_interfacePopup;
+		ExtendedPopup* m_waitPopup;
 
 		FileListPopup* m_fileManagerPopup;
 
@@ -185,6 +190,9 @@ class RecorderPlayerKM : public wxFrame
 		wxChoice* m_fileDropDown;
 		wxMessageDialog* m_saveFileDialog;
 		wxMessageDialog* m_saveDataDialog;
+
+		ProgressBar* m_progressBarPtr;
+		WxWorker* m_workerPtr; 
 
 		ExtScrolledWindow::PlayMode m_mode;
 		Cmd m_getFocusCmd;
@@ -202,7 +210,9 @@ class RecorderPlayerKM : public wxFrame
 		bool m_fullMenu;
 		bool m_indentation;
 
-		bool checkConnection(const char* errorMessage="");
+		void dialogConfirm(const wxString& line1, const wxString& line2);
+		void checkConnection();
+		void UpdateConnection(bool isConnected);
 		void initPopups();
 		bool Pause();
 
@@ -231,7 +241,7 @@ class RecorderPlayerKM : public wxFrame
 		template<typename T=InputCommand>
 		void addCommand(BaseCommand* cmd);
 
-		void StartWorker();
+		void OnWorker(wxCommandEvent& event);
 		void postEvent(wxEventType commandEventType, int id);
 
 		void OnUpdateFileDropdown(wxCommandEvent& event);
@@ -272,6 +282,14 @@ class RecorderPlayerKM : public wxFrame
 };
 
 //====================================================================
+
+inline void RecorderPlayerKM::dialogConfirm(const wxString& line1, const wxString& line2)
+{
+	wxMessageDialog dialog(this, line1, line2, wxOK);
+	dialog.ShowModal();
+}
+
+//--------------------------------------------------------------------
 
 inline void RecorderPlayerKM::OnUpdateFileDropdown(wxCommandEvent& event)
 {

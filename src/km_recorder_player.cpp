@@ -21,6 +21,8 @@
 #include "utilities.h"
 #include "hid_manager.h"
 #include "debug_utils.h"
+#include "progress_bar.h"
+#include "wx_worker.h"
 
 #include <wx/display.h>
 #include <wx/menu.h>
@@ -47,7 +49,6 @@ wxTextValidator s_shortcutValidator(wxFILTER_EXCLUDE_CHAR_LIST);
 
 extern wxIntegerValidator<unsigned int> s_integerValidator;
 
-//====================================================================
 //====================================================================
 
 static wxBitmapBundle mkBitmapBundle(const char* icon)
@@ -86,6 +87,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 , m_pauseBitmapBundle(mkBitmapBundle("actions/media-playback-pause-symbolic.symbolic.png"))
 , m_statusBar(nullptr)
 , m_inputBlocker(nullptr)
+, m_workerPtr(nullptr)
 , m_commandInputMode(CommandInputMode::REPEAT_LAST)
 , m_state(State::INITIAL)
 , m_currentPanelState(PanelStates::Initial)
@@ -127,14 +129,14 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 
 	exeCommand<124>("import 2>&1", [this](const std::string& output){
 		if(std::string::npos!=output.find("not found")){
-			wxMessageBox("import: command not found.\nPlease intall ImageMagick.");
+			wxMessageBox("Please intall imagemagick.");
 			m_fullFunctionality=SystemStatus::PARTIAL;
 		}
 	});
 
 	exeCommand<124>("xwininfo -version 2>&1", [this](const std::string& output){
 		if(std::string::npos!=output.find("not found")){
-			wxMessageBox("xwininfo: command not found.\nPlease install x11-utils.");
+			wxMessageBox("Please install x11-utils.");
 			m_fullFunctionality=SystemStatus::PARTIAL;
 		}
 	});
@@ -369,7 +371,6 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	{
 		wxBoxSizer* row = new wxBoxSizer(wxHORIZONTAL);
 		row->Add(m_statusBar, 1, wxEXPAND);
-
 		mainContentSizerV->Add(row, 0, wxEXPAND);
 	}
 
@@ -468,9 +469,6 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	Centre();
 
 	checkConnection();
-	if(!m_settings.isValidInterface()){
-		m_interfacePopup->Popup();
-	}
 }
 
 //====================================================================
@@ -553,9 +551,7 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_BUTTON(WX::DISPLAY_KBOARD, RecorderPlayerKM::OnControlBtns)
 
 	EVT_BUTTON(WX::DEMO, RecorderPlayerKM::OnControlBtns)
-
 	EVT_BUTTON(WX::SAVE_TO_FILE, RecorderPlayerKM::OnSave)
-
 	EVT_TIMER(WX::TIMER, RecorderPlayerKM::OnRunCmdTimer)
 
 	EVT_MENU(WX::MENU::WINDOW_INPUT, RecorderPlayerKM::OnMenuClick)
@@ -630,34 +626,20 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_COMMAND(EvtID::CHANGE_ROI_SCREENSHOT, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnUpdateROI)
 	EVT_COMMAND(EvtID::REMOVE_FILE_FROM_DROPDOWN, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnUpdateFileDropdown)
 
+	EVT_COMMAND(EvtID::CONNECTION_OK, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnWorker)
+	EVT_COMMAND(EvtID::CONNECTION_FAILED, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnWorker)
+
 END_EVENT_TABLE()
 
 //====================================================================
 
-bool RecorderPlayerKM::checkConnection(const char* errorMessage)
+void RecorderPlayerKM::UpdateConnection(bool isConnected)
 {
-	bool enableFunctionality=HIDManager::connectionError([](const char* msg){
-		wxMessageBox(msg);
-	});
+	m_progressBarPtr->stop();
+	m_waitPopup->Dismiss();
 
-	if(HIDManager::currentEmulator(HID_TARGET::NONE)){
-		enableFunctionality=false;
-	}
-	
-	if(!enableFunctionality){
-		if(m_playBtn->IsEnabled()){
-			m_playBtn->Disable();
-		}
-		
-		if(m_demoBtn->IsEnabled()){
-			m_demoBtn->Disable();
-		}
-
-		m_fileDropDown->Disable();
-		m_fileManagerBtn->Disable();
-		m_recordingBtn->Disable();
-	}
-	else{
+	m_setConnectionBtn->Enable();
+	if(isConnected){
 		if(m_fileDropDown->GetCount()>0){
 			m_fileDropDown->Enable();
 			m_fileManagerBtn->Enable();
@@ -667,7 +649,81 @@ bool RecorderPlayerKM::checkConnection(const char* errorMessage)
 		}
 		m_recordingBtn->Enable();
 	}
-	return enableFunctionality;
+}
+
+//====================================================================
+
+void RecorderPlayerKM::OnWorker(wxCommandEvent& event)
+{
+	bool enableFunctionality=event.GetId()==EvtID::CONNECTION_OK;
+
+	UpdateConnection(enableFunctionality);
+
+	if(!enableFunctionality){
+		dialogConfirm(
+			wxT("Please check the device is connected\nand ip/port are correct."),
+			wxT("Unable to use interface.")
+		);
+
+		m_interfacePopup->Popup();
+	}
+
+	// Notice that detached wxThreads delete themselves
+	m_workerPtr=nullptr;
+}
+
+//====================================================================
+
+void RecorderPlayerKM::checkConnection()
+{
+	if(m_playBtn->IsEnabled()){
+		m_playBtn->Disable();
+	}
+	
+	if(m_demoBtn->IsEnabled()){
+		m_demoBtn->Disable();
+	}
+
+	m_fileDropDown->Disable();
+	m_fileManagerBtn->Disable();
+	m_recordingBtn->Disable();
+
+	if(HIDManager::currentEmulator(HID_TARGET::TINYUSB)){
+		if(!m_workerPtr){
+			m_waitPopup->Popup();
+			m_workerPtr = new WxWorker(this);
+
+			if(m_workerPtr->Run()!=wxTHREAD_NO_ERROR){
+				delete m_workerPtr;
+				m_workerPtr=nullptr;
+			}
+		}
+	}
+	else{
+		bool isConnected=false;
+		if(HIDManager::currentEmulator(HID_TARGET::NONE)){
+			dialogConfirm(
+				wxT("Please set a valid interface."),
+				wxT("No interface in used.")
+			);
+		}
+		else if(HIDManager::currentEmulator(HID_TARGET::UINPUT)){
+			if(HIDManager::connectionError()!=0){
+				dialogConfirm(
+					wxT("Be sure you have permission to write to /dev/uinput."),
+					wxT("Unable to use interface /dev/uinput")
+				);
+			}
+			else{
+				isConnected=true;
+			}
+		}
+		
+		UpdateConnection(isConnected);
+		if(!isConnected){
+			m_interfacePopup->Popup();
+		}
+	}
 }
 
 //====================================================================
@@ -1781,9 +1837,42 @@ void RecorderPlayerKM::initPopups()
 	});
 
 	//------------------------------------------------
+	//----------------- Wait Popup -------------------
+
+	m_waitPopup=new ExtendedPopup(this, "Please wait");
+
+	m_progressBarPtr=m_waitPopup->builder<ProgressBar>(wxID_ANY, wxDefaultPosition, wxSize(-1, 20));
+	{
+		auto staticText=m_waitPopup->builder<wxStaticText>(wxID_ANY, "Connecting...");
+
+		wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
+		col->SetMinSize(200, 20);
+		col->Add(staticText, 0, wxBOTTOM, FromDIP(10));
+		col->Add(m_progressBarPtr, 1, wxEXPAND);
+
+		m_waitPopup->setSizer(col);
+	}
+
+	m_waitPopup->setOnPopupCallback([this](wxWindow*){
+		m_progressBarPtr->reset();
+	});
+
+	m_waitPopup->setOnDismissCallback([this](wxWindow*){
+		m_progressBarPtr->stop();
+	});
+
+	m_waitPopup->setOnClose([this](){
+		m_progressBarPtr->stop();
+	});
+
+	//------------------------------------------------
 	//----------------- Interface --------------------
 
 	m_interfacePopup= new ExtendedPopup(this, "Interface");
+	
+	m_interfacePopup->setOnPopupCallback([this](wxWindow*){
+		m_interfacePopup->Layout();
+	});
 
 	auto serialPortTag=m_interfacePopup->builder<wxStaticText>(wxID_ANY, "");
 
@@ -1815,7 +1904,7 @@ void RecorderPlayerKM::initPopups()
 	}
 
 	auto connectionTag=m_interfacePopup->builder<wxStaticText>(wxID_ANY,
-								wxT("Interface via: "));
+								wxT("Interface: "));
 	{
 		ArrayStringType choices(4,"");
 		choices[0]="none";
@@ -1842,6 +1931,7 @@ void RecorderPlayerKM::initPopups()
 					serialPortTag->SetLabel(wxT("IP: "));
 					baudRateTag->SetLabel(wxT("Port: "));
 				}
+				m_interfacePopup->Layout();
 			}
 			else{
 				baudRate->Disable();
@@ -1849,23 +1939,29 @@ void RecorderPlayerKM::initPopups()
 			}
 		});
 
-		auto setConnection=m_interfacePopup->builder<wxButton>(wxID_ANY, wxT("Set"));
+		m_setConnectionBtn=m_interfacePopup->builder<wxButton>(wxID_ANY, wxT("Set"));
 
-		setConnection->Bind(wxEVT_BUTTON, [this, connectionRadioBox, baudRate, serialPort](wxCommandEvent& event){
-			bool ok=true;
+		m_setConnectionBtn->Bind(wxEVT_BUTTON, [this, connectionRadioBox, baudRate, serialPort](wxCommandEvent& event){
 
 			m_settings.setInterfaceSetting(
-					connectionRadioBox->GetSelection(), serialPort->GetValue(), wxAtoi(baudRate->GetValue()));
+					connectionRadioBox->GetSelection(),
+					serialPort->GetValue(),
+					wxAtoi(baudRate->GetValue())
+			);
 
+			bool ok=true;
 			if(m_settings.isTinyusbLink()){
-				if(serialPort->GetValue().length()==0 || wxAtoi(baudRate->GetValue())<1){
-					ok=false;
-				}
+				ok=!(serialPort->GetValue().length()==0 || wxAtoi(baudRate->GetValue())<1);
 			}
 
-			if(checkConnection() && ok){
+			if(ok){
 				m_interfacePopup->Dismiss();
+				checkConnection();
 			}
+		});
+
+		m_interfacePopup->setOnDismissCallback([this](wxWindow*){
+			m_setConnectionBtn->Enable();
 		});
 
 		wxBoxSizer* row1=new wxBoxSizer(wxHORIZONTAL);
@@ -1881,13 +1977,13 @@ void RecorderPlayerKM::initPopups()
 		row3->Add(baudRate, 1);
 
 		wxBoxSizer* row4=new wxBoxSizer(wxHORIZONTAL);
-		row4->Add(setConnection, 0);
+		row4->Add(m_setConnectionBtn, 0);
 
 		wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
 		col->Add(row1, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 		col->Add(row2, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 		col->Add(row3, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
-		col->Add(row4, 0, wxALIGN_RIGHT);
+		col->Add(row4, 0, wxALIGN_RIGHT, FromDIP(10));
 
 		m_interfacePopup->setSizer(col);
 	}

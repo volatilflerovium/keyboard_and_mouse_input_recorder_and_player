@@ -32,14 +32,17 @@ bool TinyusbConnector::doHandshake()
 	if(s_connector!=NullConnector::getConnector()){
 		uint8_t msg[]={0xE8, 0xE9};
 		s_connector->send(msg, 2);
-
-		for(int i=0; i<50; i++){
-			if(s_connector->receive(100)){
-				return true;
-			}
+		if(s_connector->receive(500)){
+			return true;
 		}
+
 		s_connector->send(msg, 2);
-		return s_connector->receive(2000);
+		if(s_connector->receive(5000)){
+			return true;
+		}
+
+		s_connector->send(msg, 2);
+		return s_connector->receive(1000);
 	}
 	return false;
 };

@@ -87,7 +87,10 @@ std::string resourcePath(const char* fileName)
 	#ifdef DEBUG
 	std::string filePath=DEBUG_DIR; // define in CMakeLists
 	#else
-	std::string filePath=getenv("APPDIR");
+	std::string filePath="";
+	if(getenv("APPDIR")){
+		filePath=getenv("APPDIR");
+	}
 	filePath.append("/usr/share");
 	#endif
 	
@@ -100,13 +103,13 @@ std::string resourcePath(const char* fileName)
 
 std::string getFilePath(const char* file)
 {
-	#ifndef DEBUG
-	const char* hidDir="/.wxHID";
-	std::string dirPath=getenv("HOME");
-	#else
+	#ifdef DEBUG
 	const char* hidDir="/wxHID";
 	std::string dirPath=DEBUG_DIR; // define in CMakeLists
 	dirPath.append("/debug_dir");
+	#else
+	const char* hidDir="/.wxHID";
+	std::string dirPath=getenv("HOME");
 	#endif
 
 	dirPath.append(hidDir);
@@ -273,7 +276,6 @@ std::pair<int, int> getWindowCoord(const char* windowName, int x, int y, const c
 
 	if(wExists){
 		auto command=wxString::Format("xwininfo -name \"%s\" | grep \"upper-left\" | cut -d\":\" -f2 2>&1", windowName, position);
-		//dbg(command);
 		int coordinates[2]={x, y};
 		int i=0;
 		
@@ -379,9 +381,7 @@ bool wxTakeScreenshot(const int ms, const char* windowName, const char* outputIm
 	return false;
 }
 
-
 //====================================================================
-
 
 bool isRGB(const char* str)
 {

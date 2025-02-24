@@ -26,6 +26,8 @@ wxDECLARE_EVENT(wxEVT_POPUP_DISAPPEARED, wxCommandEvent);
 
 wxDECLARE_EVENT(wxEVT_TXTCTRL_COMMAND, wxCommandEvent);
 
+wxDECLARE_EVENT(wxEVT_CUSTOM_THREAD_EVENT, wxThreadEvent);
+
 enum EvtID
 {
 	ID=2500,
@@ -39,6 +41,8 @@ enum EvtID
 	UPDATE_CMD_VIEW,
 	CMD_COUNT_UPDATED,
 	REMOVE_FILE_FROM_DROPDOWN,
+	CONNECTION_OK,
+	CONNECTION_FAILED,
 };
 
 inline void postEvent(wxEvtHandler* h, wxEventType commandEventType, int id)
