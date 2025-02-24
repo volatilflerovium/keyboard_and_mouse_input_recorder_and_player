@@ -27,6 +27,8 @@ class UinputMouse : public MouseEmulatorI
 	public:
 		UinputMouse();
 		virtual ~UinputMouse();
+
+		virtual bool reload();
 		
 	private:
 		uinput_setup m_usetup={0};

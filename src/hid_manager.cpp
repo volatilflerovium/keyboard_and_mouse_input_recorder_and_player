@@ -92,13 +92,13 @@ int HIDManager::connectionError()
 	if(s_currentTarget==HID_TARGET::NONE){
 		return 1;
 	}
-	if(std::strlen(s_KeyboardEmulator->getLastError())){
-		if(s_currentTarget==HID_TARGET::UINPUT){
+
+	if(s_currentTarget==HID_TARGET::UINPUT){
+		s_MouseEmulator->reload();
+		if(!s_KeyboardEmulator->reload()){
 			return 2;
 		}
-		if(s_isSerial){
-			return 3;
-		}
+		return 0;
 	}
 
 	if(s_currentTarget==HID_TARGET::TINYUSB){
@@ -111,28 +111,6 @@ int HIDManager::connectionError()
 	}
 
 	return 0;
-}
-
-//--------------------------------------------------------------------
-
-const char* HIDManager::verboseError(int errorCode)
-{
-	if(errorCode==1){
-		return "No interface in used.";
-	}
-
-	if(errorCode==2){
-		return "Unable to use interface /dev/uinput\nbe sure you have permission to write to /dev/uinput.";
-	}
-
-	if(errorCode==3){
-		return "Unable to set serial communication,\ncheck your serial port connection.";
-	}
-
-	if(errorCode==4){
-		return "Unable to connect via UDP. Please check the device is connected\nand ip/port are correct.";
-	}
-	return "Unknown";
 }
 
 //====================================================================

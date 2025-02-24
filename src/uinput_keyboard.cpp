@@ -28,22 +28,10 @@
 //====================================================================
 
 UinputKeyboard::UinputKeyboard()
-: m_fd(open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC))
+: m_fd(-1)
 {
 	m_shortcutParserKeyMapPtr=&shortcutParserKeyMap;
-
-	setLastError([this](){
-		return m_fd < 1;
-	});
-
-	if(m_fd>-1){
-		ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
-
-		for(const auto& [key, value] : uinputKeyMap){
-			ioctl(m_fd, UI_SET_KEYBIT, value);
-		}
-		init(KEYBOARD_NAME);
-	}
+	reload();
 }
 
 //--------------------------------------------------------------------
@@ -52,6 +40,30 @@ UinputKeyboard::~UinputKeyboard()
 {
 	ioctl(m_fd, UI_DEV_DESTROY);
 	close(m_fd);
+}
+
+//--------------------------------------------------------------------
+
+bool UinputKeyboard::reload()
+{
+	if(m_fd<0){
+		m_fd=open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC);
+
+		setLastError([this](){
+			return m_fd < 1;
+		});
+
+		if(m_fd>-1){
+			ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
+
+			for(const auto& [key, value] : uinputKeyMap){
+				ioctl(m_fd, UI_SET_KEYBIT, value);
+			}
+			init(KEYBOARD_NAME);
+		}			
+	}
+
+	return m_fd>-1;
 }
 
 //--------------------------------------------------------------------

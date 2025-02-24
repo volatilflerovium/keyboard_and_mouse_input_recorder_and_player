@@ -31,22 +31,9 @@
 //====================================================================
 
 UinputMouse::UinputMouse()
-:m_fd(open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC))
+:m_fd(-1)
 {
-	setLastError([this](){
-		return m_fd < 1;
-	});
-
-	if(m_fd>-1){
-		ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
-		ioctl(m_fd, UI_SET_KEYBIT, BTN_LEFT);
-		ioctl(m_fd, UI_SET_KEYBIT, BTN_RIGHT);
-		ioctl(m_fd, UI_SET_EVBIT, EV_REL);
-		ioctl(m_fd, UI_SET_RELBIT, REL_X);
-		ioctl(m_fd, UI_SET_RELBIT, REL_Y);
-
-		init(MOUSE_NAME);
-	}
+	reload();
 }
 
 //--------------------------------------------------------------------
@@ -55,6 +42,31 @@ UinputMouse::~UinputMouse()
 {
 	ioctl(m_fd, UI_DEV_DESTROY);
 	close(m_fd);
+}
+
+//--------------------------------------------------------------------
+
+bool UinputMouse::reload()
+{
+	if(m_fd<0){
+		m_fd=open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC);
+
+		setLastError([this](){
+			return m_fd < 1;
+		});
+
+		if(m_fd>-1){
+			ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
+			ioctl(m_fd, UI_SET_KEYBIT, BTN_LEFT);
+			ioctl(m_fd, UI_SET_KEYBIT, BTN_RIGHT);
+			ioctl(m_fd, UI_SET_EVBIT, EV_REL);
+			ioctl(m_fd, UI_SET_RELBIT, REL_X);
+			ioctl(m_fd, UI_SET_RELBIT, REL_Y);
+
+			init(MOUSE_NAME);
+		}
+	}
+	return m_fd>-1;
 }
 
 //--------------------------------------------------------------------

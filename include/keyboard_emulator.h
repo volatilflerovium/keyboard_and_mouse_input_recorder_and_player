@@ -36,6 +36,8 @@ class KeyboardEmulatorI : public ErrorReporting
 	public:
 		~KeyboardEmulatorI()=default;
 
+		virtual bool reload();
+
 		virtual bool isActive()=0;
 		virtual void numLk()=0;
 
@@ -68,6 +70,14 @@ class KeyboardEmulatorI : public ErrorReporting
 		virtual void addWhiteCharacters()=0;
 		virtual void prepareUnicodeInput()=0;
 };
+
+//--------------------------------------------------------------------
+
+// trivial because it is not necessary to be implemente by tinyusb stuff
+inline bool KeyboardEmulatorI::reload()
+{
+	return true;
+}
 
 //--------------------------------------------------------------------
 

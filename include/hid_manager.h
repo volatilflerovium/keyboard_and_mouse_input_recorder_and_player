@@ -31,7 +31,6 @@ class HIDManager
 		static void SetHidEmulator(const InterfaceLink target, const char* portPath="", uint baudRate=0, bool isSerial=false);
 		static bool currentEmulator(HID_TARGET target);
 		static int connectionError();
-		static const char* verboseError(int errorCode);
 
 	private:
 		static HID_TARGET s_currentTarget;

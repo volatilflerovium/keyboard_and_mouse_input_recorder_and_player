@@ -37,8 +37,6 @@ class WxWorker : public wxThread
 
 	private:
 		wxWindow* m_parent;
-
-		void fireEvent(EvtID eventID, const wxString& msg="");
 };
 
 //--------------------------------------------------------------------
@@ -48,15 +46,6 @@ inline WxWorker::WxWorker(wxWindow* parent)
 :wxThread(wxTHREAD_DETACHED)
 , m_parent(parent)
 {
-}
-
-//--------------------------------------------------------------------
-
-inline void WxWorker::fireEvent(EvtID eventID, const wxString& msg)
-{
-	wxCommandEvent event(wxEVT_CUSTOM_EVENT, eventID);
-	event.SetString(msg);
-	wxPostEvent(m_parent, event);
 }
 
 //--------------------------------------------------------------------

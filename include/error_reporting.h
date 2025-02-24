@@ -24,6 +24,8 @@ class ErrorReporting
 		~ErrorReporting()=default;
 		const char* getLastError() const;
 
+		void clearError();
+
 	protected:
 		void setLastError(std::function<bool(void)> cbk, const char* msg="");
 	
@@ -39,5 +41,8 @@ inline const char* ErrorReporting::getLastError() const
 {
 	return m_errorMsgBuf;
 }
+
+//--------------------------------------------------------------------
+
 
 #endif

@@ -37,6 +37,8 @@ class MouseEmulatorI : public ErrorReporting
 		MouseEmulatorI()=default;
 		virtual ~MouseEmulatorI()=default;
 
+		virtual bool reload();
+
 		void clickLeftBtn();
 		void clickRightBtn();
 
@@ -81,6 +83,14 @@ class MouseEmulatorI : public ErrorReporting
 
 		void moveAbs(const int absX, const int absY, ClientMousePosition getMousePosition);
 };
+
+//--------------------------------------------------------------------
+
+// trivial because it is not necessary to be implemente by tinyusb stuff
+inline bool MouseEmulatorI::reload()
+{
+	return true;
+}
 
 //--------------------------------------------------------------------
 

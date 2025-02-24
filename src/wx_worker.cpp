@@ -23,12 +23,13 @@ wxThread::ExitCode WxWorker::Entry()
 {
 	int errorCode=HIDManager::connectionError();
 
+	EvtID eventID=EvtID::CONNECTION_OK;
 	if(errorCode>0){
-		fireEvent(EvtID::CONNECTION_FAILED, HIDManager::verboseError(errorCode));
+		eventID=EvtID::CONNECTION_FAILED;
 	}
-	else{
-		fireEvent(EvtID::CONNECTION_OK);
-	}
+
+	wxCommandEvent event(wxEVT_CUSTOM_EVENT, eventID);
+	wxPostEvent(m_parent, event);
 
 	return 0;
 }

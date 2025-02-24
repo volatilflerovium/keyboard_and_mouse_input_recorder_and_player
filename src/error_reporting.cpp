@@ -24,7 +24,7 @@
 void ErrorReporting::setLastError(std::function<bool(void)> cbk, const char* msg)
 {
 	m_lastError=0;
-	std::memset(m_errorMsgBuf, 0, c_errorBufSize);
+	clearError();
 	if(cbk()){
 		m_lastError=errno;
 
@@ -37,6 +37,13 @@ void ErrorReporting::setLastError(std::function<bool(void)> cbk, const char* msg
 
 		dbg("HID last error: ", m_errorMsgBuf, " : ", std::strerror(m_lastError));
 	}
+}
+
+//--------------------------------------------------------------------
+
+void ErrorReporting::clearError()
+{
+	std::memset(m_errorMsgBuf, 0, c_errorBufSize);
 }
 
 //====================================================================

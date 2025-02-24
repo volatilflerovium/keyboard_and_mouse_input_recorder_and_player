@@ -29,9 +29,9 @@ class UinputKeyboard : public KeyboardEmulatorI
 {
 	public:
 		UinputKeyboard();
-
 		virtual ~UinputKeyboard();
 
+		virtual bool reload();
 
 		virtual void numLk() override;
 		virtual bool isActive() override;
