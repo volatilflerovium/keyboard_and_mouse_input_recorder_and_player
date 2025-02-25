@@ -643,10 +643,13 @@ void RecorderPlayerKM::UpdateConnection(bool isConnected)
 		if(m_fileDropDown->GetCount()>0){
 			m_fileDropDown->Enable();
 			m_fileManagerBtn->Enable();
-			if(m_fileDropDown->GetSelection()>0){
-				m_playBtn->Enable();
-			}
 		}
+
+		if(m_scrolledWindow->size()>0){
+			m_playBtn->Enable();
+			m_demoBtn->Enable();
+		}
+		
 		m_recordingBtn->Enable();
 	}
 }
@@ -700,7 +703,7 @@ void RecorderPlayerKM::checkConnection()
 		}
 	}
 	else{
-		bool isConnected=false;
+		bool isConnected=HIDManager::checkConnection();
 		if(HIDManager::currentEmulator(HID_TARGET::NONE)){
 			dialogConfirm(
 				wxT("Please set a valid interface."),
@@ -708,14 +711,11 @@ void RecorderPlayerKM::checkConnection()
 			);
 		}
 		else if(HIDManager::currentEmulator(HID_TARGET::UINPUT)){
-			if(HIDManager::connectionError()!=0){
+			if(!isConnected){
 				dialogConfirm(
 					wxT("Be sure you have permission to write to /dev/uinput."),
 					wxT("Unable to use interface /dev/uinput")
 				);
-			}
-			else{
-				isConnected=true;
 			}
 		}
 		

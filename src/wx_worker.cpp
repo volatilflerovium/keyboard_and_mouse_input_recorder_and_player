@@ -21,11 +21,9 @@
 
 wxThread::ExitCode WxWorker::Entry()
 {
-	int errorCode=HIDManager::connectionError();
-
-	EvtID eventID=EvtID::CONNECTION_OK;
-	if(errorCode>0){
-		eventID=EvtID::CONNECTION_FAILED;
+	EvtID eventID=EvtID::CONNECTION_FAILED;
+	if(HIDManager::checkConnection()){
+		eventID=EvtID::CONNECTION_OK;
 	}
 
 	wxCommandEvent event(wxEVT_CUSTOM_EVENT, eventID);

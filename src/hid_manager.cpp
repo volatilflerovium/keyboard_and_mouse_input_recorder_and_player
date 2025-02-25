@@ -87,30 +87,18 @@ void HIDManager::SetTinyusbEmulator(const char* alpha, uint numeric, bool isSeri
 
 //--------------------------------------------------------------------
 
-int HIDManager::connectionError()
+bool HIDManager::checkConnection()
 {
-	if(s_currentTarget==HID_TARGET::NONE){
-		return 1;
-	}
-
 	if(s_currentTarget==HID_TARGET::UINPUT){
-		s_MouseEmulator->reload();
-		if(!s_KeyboardEmulator->reload()){
-			return 2;
-		}
-		return 0;
+		return s_KeyboardEmulator->reload() && s_MouseEmulator->reload();
 	}
 
 	if(s_currentTarget==HID_TARGET::TINYUSB){
-		if(!TinyusbConnector::doHandshake()){
-			if(s_isSerial){
-				return 3;
-			}
-			return 4;
-		}
+		return TinyusbConnector::doHandshake();
 	}
 
-	return 0;
+	//s_currentTarget==HID_TARGET::NONE
+	return false;
 }
 
 //====================================================================
