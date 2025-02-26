@@ -381,7 +381,9 @@ bool wxTakeScreenshot(const int ms, const char* windowName, const char* outputIm
 	return false;
 }
 
+
 //====================================================================
+
 
 bool isRGB(const char* str)
 {

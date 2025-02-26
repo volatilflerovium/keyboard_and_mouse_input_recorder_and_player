@@ -1,8 +1,8 @@
 # Keyboard and Mouse Input Recorder and Player
 
-Keyboard and Mouse Input Recorder and Player (KeyboardAndMouseRecorderPlayer)
+Keyboard and Mouse Input Recorder and Player (kmRecorderAndPlayer)
 is a Linux desktop application for recording sequence of keyboard and mouse
-input that can be saved to a file and be played it at any time to simulate
+input that can be saved to a file and be played back at any time to simulate
 user input.
 
 ## Content
@@ -12,8 +12,8 @@ user input.
 - [AppImage](#appimage)
 - [Examples](#examples)
 - [Interface Method](#interface-method)
-	- [uinput](#uinput)
 	- [TinyUSB](#TinyUSB)
+	- [uinput](#uinput)
 	- [vm](#vm)
 - [Control Command](#control-command)
 - [Things to be Considered](things-to-be-considered)
@@ -21,26 +21,30 @@ user input.
 
 ## Overview
 
-KeyboardAndMouseRecorderPlayer allows you to record HID input from:
-- keyboard: text input, shortcuts, keystroke, unicode input and
+kmRecorderAndPlayer allows you to record HID input from:
+- keyboard: text input, shortcuts, keystroke, unicode input
 - mouse: left/right click, drag/drop/selection
-and save it to a file and play them back as if someone were actually doing
-the input. Also, KeyboardAndMouseRecorderPlayer is equipped with a control command that 
-allows to take screenshots of a window or region in the screen and compare it 
-with a master image, so it can be set to terminate the sequence of input commands
-if the comparison fails.
+and save it to a file and play them back to simulate actual user input.
 
-In principle there are two scenarios where it can be useful:
+kmRecorderAndPlayer is not a GUI for xdotool; in fact, xdotool is not needed
+at all.
+
+The more important feature of kmRecorderAndPlayer, is the ability
+to control the execution commands based on the "visual" state of the
+target window or a specific region of it window or of the screen.
+This is done via internal image comparism.
+
+Potential applications could be:
 - automatic GUI testing: when developing a GUI, one has to click buttons 
-  and input text. We could use KeyboardAndMouseRecorderPlayer these inputs and play it
-  put and play then back and compare the result with a master screenshot.
+  and input text. We could use kmRecorderAndPlayer to automate these inputs
+  and compare the result with a master screenshot.
 - Interacting with websites: despite lot of plug-in and script off the shelf
-  to automatize interacting with a website, it is true that websites are increasingly
-  blocking interaction with these automatic tools.
+  to automatize interacting with a website, it is true that websites are
+  increasingly blocking interaction with these automatic tools. 
 
 ## Dependencies
 
-In order to run KeyboardAndMouseRecorderPlayer, your system needs to meet
+In order to run kmRecorderAndPlayer, your system needs to meet
 the following dependencies:
 
 - imagemagick
@@ -66,7 +70,7 @@ the following dependencies:
 
 ## AppImage
 
-[KeyboardAndMouseRecorderPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/releases)
+[kmRecorderAndPlayer](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/releases)
 is available as an AppImage which means "one app = one file", which you can download and run on your
 Linux system while you don't need a package manager and nothing gets changed
 in your system.
@@ -79,24 +83,38 @@ openSUSE, Red Hat, Ubuntu, and other common desktop distributions.
 
 ## Examples
 
-The following examples are here only to illustrate the functionality of KeyboardAndMouseRecorderPlayer
+The following examples are here only to illustrate the functionality of
+kmRecorderAndPlayer:
+- [Startup:](https://odysee.com/@volatilflerovium:3/Quick_start_setup:c)
+- [Claudflare turnstile](https://odysee.com/@volatilflerovium:3/captchat_example:f)
+- [Image comparison tool](https://odysee.com/@volatilflerovium:3/image_comparison_tool_example:7)
+- [GUI testing](https://odysee.com/@volatilflerovium:3/GUI_testing:4)
 
-- GUI development
-- download files
-- text processing
 
 ## Interface Method
 
-KeyboardAndMouseRecorderPlayer can interface with the OS via two methods
-- via file descriptor to /dev/uinput
+kmRecorderAndPlayer can interface with the OS via two methods
 - [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html)
+- via file descriptor to /dev/uinput
 
-**_Disclaimer_**: when using KeyboardAndMouseRecorderPlayer via /dev/uinput you should be aware of
+**_Disclaimer_**: when using kmRecorderAndPlayer via /dev/uinput you should be aware of
 the [File Descriptor Hijack vulnerability (CVE-2023-34059)](https://access.redhat.com/security/cve/cve-2023-34059).
 Notice that (CVE-2023-34059) Does NOT say that open file descriptors to /dev/uinput will 
 exposes your Linux OS, what it actually says is that if your system has already been 
 compromised with a malicious actor, this could hijack the file descriptor to /dev/uinput 
 to simulate user input.
+
+
+### TinyUSB
+
+[TinyUSB](https://docs.TinyUSB.org/en/latest/index.html) is an open-source cross-platform USB Host/Device stack for embedded system.
+This project uses TinyUSB to emulate a phisical keyboard and mouse that can
+be used as the keyboard/mouse for kmRecorderAndPlayer.
+
+The directory [hid_keyboard_and_mouse](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/tree/main/hid_keyboard_and_mouse)
+has a project to build a image for RaspberryPi Pico W for this purpose. Then
+we can configure kmRecorderAndPlayer as UDP client to send the input commands
+to the installation of TinyUSB in the Pico W.
 
 ### /dev/uinput
 
@@ -118,20 +136,9 @@ Permission 720 should be enough, but in some cases you will need to set 777.
 Remember **_these permissions are not permanent, they will be revoke at reboot_**.
 Alternatively you can use a device rule file.
 
-### TinyUSB
-
-[TinyUSB](https://docs.TinyUSB.org/en/latest/index.html) is an open-source cross-platform USB Host/Device stack for embedded system.
-This project uses TinyUSB to emulate a phisical keyboard and mouse that can
-be used as the keyboard/mouse for KeyboardAndMouseRecorderPlayer.
-
-The directory [hid_keyboard_and_mouse](https://github.com/volatilflerovium/keyboard_and_mouse_input_recorder_and_player/tree/main/hid_keyboard_and_mouse)
-has a project to build a image for RaspberryPi Pico W for this purpose. Then
-we can configure KeyboardAndMouseRecorderPlayer as UDP client to send the input commands
-to the installation of TinyUSB in the Pico W.
-
 ### vm
 
-It would be worthy to consider running KeyboardAndMouseRecorderPlayer on
+It would be worthy to consider running kmRecorderAndPlayer on
 a Linux installation on a Virtual Machine, it this way, it will be on an isolated 
 enviroment in particular if it has to run long sequences of input commands.
 Beside in a VM, the risk of [CVE-2023-34059](https://access.redhat.com/security/cve/cve-2023-34059)
@@ -139,7 +146,7 @@ should be irrelevant.
 
 ## Control Command
 
-The most important feature of KeyboardAndMouseRecorderPlayer is its functionality
+The most important feature of kmRecorderAndPlayer is its functionality
 to set a Control Command which takes a screenshot of a particular area of the
 screen or of a window and compares it to one previously taken in order to take decision
 to stop execution of next commands or continue. Without this, some commands
@@ -152,8 +159,8 @@ See the [user manual](https://github.com/volatilflerovium/keyboard_and_mouse_inp
 
 ## Things to be Considered
 
-- KeyboardAndMouseRecorderPlayer will apply the input commands continuously as they are set. But 
-KeyboardAndMouseRecorderPlayer is not aware about the context of the commands, in other words,
+- kmRecorderAndPlayer will apply the input commands continuously as they are set. But 
+kmRecorderAndPlayer is not aware about the context of the commands, in other words,
 the commands will be input independently of which is the current active window
 in the screen. For example an input command might be considered to be applied on a
 particular window, but if the window is not active, that input command will be

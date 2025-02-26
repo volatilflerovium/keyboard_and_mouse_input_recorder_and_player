@@ -10,4 +10,4 @@ ImageDiff_Lib/build
 ImageDiff_Lib/test
 tinyusb_link_lib/build
 tinyusb_link_lib/tests
-
+*.AppImage

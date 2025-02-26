@@ -146,11 +146,12 @@ void ExtScrolledWindow::addLoop(int times)
 void ExtScrolledWindow::closeLoop()
 {
 	int length=m_cmdViewList.size()-m_loopStartAt;
-	if(length>0){
+	if(length>0 && m_loopStartAt>-1){
 		Scroll(0, 0);
 		BasePanel* closeLoop=new CloseLoopPanel(this, m_height, m_width);
 
 		addCommandPanel(closeLoop);
+		m_loopStartAt=-1;
 	}
 	else{
 		removeLast();
@@ -372,16 +373,18 @@ bool ExtScrolledWindow::swap(bool downSwap)
 
 		if((*prev)->isPanel(PanelType::OPEN_LOOP)){
 			(*next)->doIndentation(true);
+			m_loopStartAt--;
 		}
 		else if((*prev)->isPanel(PanelType::CLOSE_LOOP)){
 			(*next)->doIndentation(false);
 		}
 		else if((*next)->isPanel(PanelType::OPEN_LOOP)){
 			(*prev)->doIndentation(false);
+			m_loopStartAt++;
 		}
 		else if((*next)->isPanel(PanelType::CLOSE_LOOP)){
 			(*prev)->doIndentation(true);
-		}
+		}		
 	}
 
 	return doSwap;

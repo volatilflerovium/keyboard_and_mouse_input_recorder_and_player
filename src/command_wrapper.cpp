@@ -120,6 +120,8 @@ void CommandPanel::init(bool indentation)
 		m_baseCommandPtr->updateDescription(val);
 	});
 
+	setTimeoutCtrl();
+	/*
 	m_timeoutInput = new WX_TextCtrl(m_handlerPtr, wxID_ANY, wxT("1"), wxDefaultPosition,
 								wxSize(80, 23), wxNO_BORDER, s_integerValidator);
 
@@ -130,7 +132,7 @@ void CommandPanel::init(bool indentation)
 	m_timeoutInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
 		wxCommandEvent event2(wxEVT_CUSTOM_EVENT, EvtID::CHANGES_MADE);
 		wxPostEvent(this, event2);
-    });
+   });// */
 
 	m_statusBtn=new wxButton(m_handlerPtr, wxID_ANY, wxT(""),
 		wxDefaultPosition, wxSize(20,20), wxNO_BORDER | wxBU_EXACTFIT);// | wxBU_NOTEXT);
@@ -202,17 +204,42 @@ void CommandPanel::doIndentation(bool indentation)
 
 //====================================================================
 
+wxFloatingPointValidator<float> InputCommandWrapper::s_floatValidator;
+bool InputCommandWrapper::s_isValidatorSet=false;
+
 InputCommandWrapper::InputCommandWrapper(wxWindow* parent, uint posY, uint width, BaseCommand* cmd)
 :CommandPanel(parent, posY, width, cmd)
-{}
+{
+	if(!s_isValidatorSet){
+		s_isValidatorSet=true;
+		s_floatValidator.SetRange(0, 60*60*2);
+		s_floatValidator.SetPrecision(2);
+	}
+}
 
+
+void InputCommandWrapper::setTimeoutCtrl()
+{
+	m_timeoutInput = new WX_TextCtrl(m_handlerPtr, wxID_ANY, wxT("1"), wxDefaultPosition,
+								wxSize(80, 23), wxNO_BORDER, s_floatValidator);
+
+	m_timeoutInput->setCallback([this](const char* val){
+		m_baseCommandPtr->updateTime(std::atof(val)*1000);
+	});
+
+	m_timeoutInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
+		wxCommandEvent event2(wxEVT_CUSTOM_EVENT, EvtID::CHANGES_MADE);
+		wxPostEvent(this, event2);
+   });
+}
 
 void InputCommandWrapper::init(bool indentation)
 {
 	CommandPanel::init(indentation);
 
-	wxStaticText* paddingTime=new wxStaticText(m_handlerPtr, wxID_ANY, wxT("Wait for (ms): "));
-	m_timeoutInput->ChangeValue(wxString::Format(wxT("%i"), m_baseCommandPtr->wait()));
+	wxStaticText* paddingTime=new wxStaticText(m_handlerPtr, wxID_ANY, wxT("Wait for (secs): "));
+
+	m_timeoutInput->ChangeValue(wxString::Format(wxT("%.2f"), m_baseCommandPtr->wait()/1000.0));
 
 	//layout
 
@@ -265,6 +292,23 @@ ControlCommandWrapper::ControlCommandWrapper(wxWindow* parent, uint posY, uint w
 BEGIN_EVENT_TABLE(ControlCommandWrapper, CommandPanel)
 	EVT_CHECKBOX(EvtID::ID, ControlCommandWrapper::OnCheck)
 END_EVENT_TABLE()
+
+//--------------------------------------------------------------------
+
+void ControlCommandWrapper::setTimeoutCtrl()
+{
+	m_timeoutInput = new WX_TextCtrl(m_handlerPtr, wxID_ANY, wxT("1"), wxDefaultPosition,
+								wxSize(80, 23), wxNO_BORDER, s_integerValidator);
+
+	m_timeoutInput->setCallback([this](const char* val){
+		m_baseCommandPtr->updateTime(std::atoi(val));
+	});
+
+	m_timeoutInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
+		wxCommandEvent event2(wxEVT_CUSTOM_EVENT, EvtID::CHANGES_MADE);
+		wxPostEvent(this, event2);
+   });
+}
 
 //--------------------------------------------------------------------
 

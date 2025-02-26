@@ -244,6 +244,7 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 
 		static constexpr int c_padding=30;
 
+		virtual void setTimeoutCtrl()=0;
 		virtual void OnCheck(wxCommandEvent& event);
 
 		DECLARE_EVENT_TABLE()
@@ -261,6 +262,14 @@ class InputCommandWrapper : public CommandPanel
 		virtual ~InputCommandWrapper()=default;
 
 		virtual void init(bool indentation=false);
+
+	protected:
+		virtual void setTimeoutCtrl() override;
+
+	private:
+		static wxFloatingPointValidator<float> s_floatValidator;
+		static bool s_isValidatorSet;
+
 };
 
 //====================================================================
@@ -280,6 +289,9 @@ class ControlCommandWrapper : public CommandPanel
 		{
 			m_timeoutInput->ChangeValue(wxString::Format("%i", timeout));
 		}
+
+	protected:
+		virtual void setTimeoutCtrl() override;
 
 	private:
 		wxButton* m_edit;

@@ -55,7 +55,6 @@ BaseCommand* ParserBuilder(const std::string& line)
 
 	const char* description=parts[1];
 	bool run=toBool(parts[2]);
-	const int wait=std::atoi(parts[last]);
 
 	if(CommandTypes::Ctrl==commandID || CommandTypes::Screenshot==commandID){
 		bool similarity=toBool(parts[CTRL_INDEX::SIMILARITY]);
@@ -77,6 +76,7 @@ BaseCommand* ParserBuilder(const std::string& line)
 		/*Input command
 		 command ID ,  m_description, m_run, (params...), CMD_ID, m_wait
 		*/
+		const int wait=std::atoi(parts[last]);
 		switch(commandID)
 		{
 			case CommandTypes::Keyboard:
