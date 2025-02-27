@@ -65,7 +65,7 @@ class RecorderPlayerKM : public wxFrame
 		enum CommandInputMode
 		{
 			QUIET,
-			AFTER_ME, // same as repeat last but not screenshot is taken
+			ACTIVE, // same as repeat last but not screenshot is taken
 			REPEAT_LAST,	
 			REPEAT_ALL,
 			NONE,// not use

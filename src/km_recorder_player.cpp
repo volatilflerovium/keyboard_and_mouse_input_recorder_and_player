@@ -167,7 +167,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	
 	ArrayStringType cmdInputModeChoices(captureOptions,"");
 
-	cmdInputModeChoices[CommandInputMode::AFTER_ME]="After Me";
+	cmdInputModeChoices[CommandInputMode::ACTIVE]="Active";
 	cmdInputModeChoices[CommandInputMode::QUIET]="Quiet";
 
 	if(m_fullFunctionality==SystemStatus::OK){
@@ -566,7 +566,7 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_MENU(WX::MENU::DRAG_HERE, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SUBMENU_REPEAT_ALL, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SUBMENU_REPEAT_LAST, RecorderPlayerKM::OnMenuClick)
-	EVT_MENU(WX::MENU::SUBMENU_AFTER_ME, RecorderPlayerKM::OnMenuClick)
+	EVT_MENU(WX::MENU::SUBMENU_ACTIVE, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SUBMENU_QUIET, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::CLOSE_MENU, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::CANCEL_NEW_ROI, RecorderPlayerKM::OnMenuClick)
@@ -978,7 +978,7 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 				if(
 					event.GetId()==WX::MENU::SUBMENU_REPEAT_ALL ||
 					event.GetId()==WX::MENU::SUBMENU_REPEAT_LAST ||
-					event.GetId()==WX::MENU::SUBMENU_AFTER_ME ||
+					event.GetId()==WX::MENU::SUBMENU_ACTIVE ||
 					event.GetId()==WX::MENU::SUBMENU_QUIET
 				){
 					if(event.GetId()==WX::MENU::SUBMENU_REPEAT_ALL){
@@ -987,8 +987,8 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 					else if(event.GetId()==WX::MENU::SUBMENU_REPEAT_LAST){
 						m_commandInputMode=CommandInputMode::REPEAT_LAST;
 					}
-					else if(event.GetId()==WX::MENU::SUBMENU_AFTER_ME){
-						m_commandInputMode=CommandInputMode::AFTER_ME;
+					else if(event.GetId()==WX::MENU::SUBMENU_ACTIVE){
+						m_commandInputMode=CommandInputMode::ACTIVE;
 					}
 					else{
 						m_commandInputMode=CommandInputMode::QUIET;
@@ -1070,8 +1070,8 @@ void RecorderPlayerKM::mkMenu(bool allowScreenshot, bool fullMenu)
 				wxMenu* subMenu=new wxMenu;
 				subMenu->AppendCheckItem(WX::MENU::SUBMENU_QUIET, wxT("Quiet"));
 					subMenu->Check(WX::MENU::SUBMENU_QUIET, m_commandInputMode==CommandInputMode::QUIET);
-				subMenu->AppendCheckItem(WX::MENU::SUBMENU_AFTER_ME, wxT("After Me"));
-					subMenu->Check(WX::MENU::SUBMENU_AFTER_ME, m_commandInputMode==CommandInputMode::AFTER_ME);
+				subMenu->AppendCheckItem(WX::MENU::SUBMENU_ACTIVE, wxT("Active"));
+					subMenu->Check(WX::MENU::SUBMENU_ACTIVE, m_commandInputMode==CommandInputMode::ACTIVE);
 				subMenu->AppendCheckItem(WX::MENU::SUBMENU_REPEAT_LAST, wxT("Repeat Last"));
 					subMenu->Check(WX::MENU::SUBMENU_REPEAT_LAST, m_commandInputMode==CommandInputMode::REPEAT_LAST);
 				subMenu->AppendCheckItem(WX::MENU::SUBMENU_REPEAT_ALL, wxT("Repeat All"));
@@ -1202,7 +1202,7 @@ void RecorderPlayerKM::SequenceFinished()
 	}
 	else{
 		// Notice that CommandInputMode::QUIET does not run commands
-		if(m_commandInputMode!=CommandInputMode::AFTER_ME){
+		if(m_commandInputMode!=CommandInputMode::ACTIVE){
 			std::string imageFile=SCREEN_BACKGROUND;
 
 			bool ok=wxTakeScreenshot(m_settings.getScreenshotTimeout(), FULL_SCREEN, imageFile.c_str());
@@ -1216,7 +1216,7 @@ void RecorderPlayerKM::SequenceFinished()
 
 		ManagePanels(PanelStates::Recording);
 		
-		if(m_commandInputMode!=CommandInputMode::AFTER_ME){
+		if(m_commandInputMode!=CommandInputMode::ACTIVE){
 			m_getFocusCmd();
 		}
 	}
@@ -2381,7 +2381,7 @@ void RecorderPlayerKM::OnModeSelection(CommandInputMode mode)
 		m_keyboardBtn->Enable();
 		m_inputBlocker->reset();
 	}
-	else if(m_commandInputMode==CommandInputMode::AFTER_ME){
+	else if(m_commandInputMode==CommandInputMode::ACTIVE){
 		m_inputBlocker->reset();
 	}
 	else{
