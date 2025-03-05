@@ -416,7 +416,6 @@ inline void ImageROI<W, true>::OnMouseMove(wxMouseEvent& event)
 	if(m_select==SELECTION::START){
 		m_roi->setCornerB(getMousePosition());
 		refresh(this);
-		paintNow();
 	}
 }
 

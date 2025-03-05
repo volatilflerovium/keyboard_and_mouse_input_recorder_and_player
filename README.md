@@ -58,15 +58,15 @@ the following dependencies:
   go away when it lose focus. In other cases it is straight forward. 
 - Save input commands: the recorded input commands can be save to a file that can be loaded
   later.
-- Recording of input commands: with global context (on the context of the main screen)
-  or local context (on the context of a particular window).
+- Recording of input commands in the global context (on the context of the main screen)
+  or in a local context (targetting a particular window).
 - Loop: we can repeat sequence of commands.
 - Image based control command: take a screenshot of an area in the screen
   and compare it to a master image. Set it to stop or continue the next input
   command if the control command fails of passes.
-- Ability to use [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html): as a proxy HID
-  device so it can set the input commands on the OS.
-- Time padding
+- Ability to use [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html) as a proxy HID
+  device.
+- Time padding: delay execution of commands.
 
 ## AppImage
 
@@ -85,11 +85,11 @@ openSUSE, Red Hat, Ubuntu, and other common desktop distributions.
 
 The following examples are here only to illustrate the functionality of
 kmRecorderAndPlayer:
-- [Startup:](https://odysee.com/@volatilflerovium:3/Quick_start_setup:c)
+- [Startup](https://odysee.com/@volatilflerovium:3/Quick_start_setup:c)
 - [Claudflare turnstile](https://odysee.com/@volatilflerovium:3/captchat_example:f)
 - [Image comparison tool](https://odysee.com/@volatilflerovium:3/image_comparison_tool_example:7)
 - [GUI testing](https://odysee.com/@volatilflerovium:3/GUI_testing:4)
-
+- [Download images](https://odysee.com/@volatilflerovium:3/download_imgs:c)
 
 ## Interface Method
 
@@ -161,11 +161,18 @@ See the [user manual](https://github.com/volatilflerovium/keyboard_and_mouse_inp
 
 - kmRecorderAndPlayer will apply the input commands continuously as they are set. But 
 kmRecorderAndPlayer is not aware about the context of the commands, in other words,
-the commands will be input independently of which is the current active window
+the commands will applied independently of what is the current active window
 in the screen. For example an input command might be considered to be applied on a
 particular window, but if the window is not active, that input command will be
 captured by whichever window is active at that moment. In this sense keep in mind
-that a particular input like a shortcut in a particular window might be set for a different
-action in another window. 
+that a particular input like a shortcut in a particular window might have a
+different action in another window. 
+
+## Extra
+
+- Can kmRecorderAndPlayer run commands? Well if you want to run commands
+  you can instruct kmRecorderAndPlayer to open a terminar and input the command/script
+  you want to run.
+
 
 ## License

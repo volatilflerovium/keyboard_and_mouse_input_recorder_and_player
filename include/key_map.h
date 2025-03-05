@@ -495,6 +495,7 @@ static const std::map<std::string, int> shortcutParserKeyMap
 	{"PRTSC", KEY_SYSRQ},
 	{"BACKSPACE", KEY_BACKSPACE},
 	//{"Enter", KEY_ENTER},
+	{"TAB", KEY_TAB},
 	{"INS", KEY_INSERT},
 	{"HOME", KEY_HOME},
 	{"PGUP", KEY_PAGEUP},

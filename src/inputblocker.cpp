@@ -15,6 +15,8 @@
 **********************************************************************/
 #include "inputblocker.h"
 
+#include <wx/display.h>
+
 //====================================================================
 
 InputBloker::InputBloker(wxWindow* parent, int transparency)
@@ -26,10 +28,28 @@ InputBloker::InputBloker(wxWindow* parent, int transparency)
 
 	Create(parent, wxID_ANY, "Input Blocker",
 	wxDefaultPosition, wxDefaultSize,
-	wxFRAME_NO_WINDOW_MENU);
+	wxFRAME_NO_WINDOW_MENU
+	//wxFRAME_TOOL_WINDOW | wxNO_BORDER
+	);
 
 	SetTransparent(transparency);
 	blockInput(false);
+
+	Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& event){
+		blockInput(false);
+	});
+
+	Bind(wxEVT_ICONIZE, [this](wxIconizeEvent& event){
+		if(m_isIconized){
+			Iconize();
+		}
+	});
+
+	wxRect rect=wxDisplay(this).GetGeometry();
+	
+	wxBoxSizer* boxWrapper = new wxBoxSizer(wxHORIZONTAL);
+	boxWrapper->SetMinSize(rect.GetWidth(), rect.GetHeight());
+	this->SetSizerAndFit(boxWrapper);
 }
 
 //--------------------------------------------------------------------
@@ -83,18 +103,15 @@ void InputBloker::setValidRect(int x, int y, int w, int h)
 
 void InputBloker::blockInput(bool block)
 {
-	if(!block){
-		Hide();
-		Refresh();
-	}
-
-	ShowFullScreen(block, wxFULLSCREEN_ALL);
 	m_isIconized=!block;
 	Iconize(m_isIconized);
+
 	if(block){
 		Refresh();
 		Raise();
 	}
+
+	ShowFullScreen(block, wxFULLSCREEN_ALL);
 }
 
 //====================================================================

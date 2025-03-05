@@ -38,6 +38,7 @@ class ProgressBar : public wxPanel
 		{
 			wxColour colour(wxT("#ffffff"));
 			SetBackgroundColour(colour);
+			SetBackgroundStyle(wxBG_STYLE_PAINT);
 			//Connect(wxEVT_PAINT, wxPaintEventHandler(ProgressBar::OnPaint));
 		}
 

@@ -38,7 +38,6 @@ class InputBloker : public ImageROI<wxFrame>
 		virtual unsigned int getTransparency() const;
 		virtual bool isRectangle() const;
 
-
 	protected:
 		virtual void OnMouseMove(wxMouseEvent& event) override;
 		virtual void paintNow();

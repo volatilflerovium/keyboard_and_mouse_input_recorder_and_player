@@ -345,8 +345,6 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	else{
 		m_keyboardBtn->Disable();
 	}
-	m_demoBtn = new wxButton(this, WX::DEMO, wxT("Demo"));
-	m_demoBtn->Disable();
 
 	wxBitmapButton* closeBtn=makeButton(this, "actions/system-shutdown-symbolic.symbolic.png", wxID_EXIT);
 
@@ -356,8 +354,6 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	{
 		wxBoxSizer* row = new wxBoxSizer(wxHORIZONTAL);
 		row->Add(m_keyboardBtn);
-		row->Add(1, 1, wxEXPAND);
-		row->Add(m_demoBtn);
 		row->Add(1, 1, wxEXPAND);
 		row->Add(closeBtn);
 
@@ -550,7 +546,6 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_BUTTON(WX::CLEAR, RecorderPlayerKM::OnControlBtns)
 	EVT_BUTTON(WX::DISPLAY_KBOARD, RecorderPlayerKM::OnControlBtns)
 
-	EVT_BUTTON(WX::DEMO, RecorderPlayerKM::OnControlBtns)
 	EVT_BUTTON(WX::SAVE_TO_FILE, RecorderPlayerKM::OnSave)
 	EVT_TIMER(WX::TIMER, RecorderPlayerKM::OnRunCmdTimer)
 
@@ -592,6 +587,7 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_BUTTON(WX::KBD::F10_BTN, RecorderPlayerKM::OnKeybordBtns)
 	EVT_BUTTON(WX::KBD::F11_BTN, RecorderPlayerKM::OnKeybordBtns)
 	EVT_BUTTON(WX::KBD::F12_BTN, RecorderPlayerKM::OnKeybordBtns)
+	EVT_BUTTON(WX::KBD::Tab_BTN, RecorderPlayerKM::OnKeybordBtns)
 	EVT_BUTTON(WX::KBD::PrtSc_BTN, RecorderPlayerKM::OnKeybordBtns)
 	EVT_BUTTON(WX::KBD::Backspace_BTN, RecorderPlayerKM::OnKeybordBtns)
 	EVT_BUTTON(WX::KBD::Enter_BTN, RecorderPlayerKM::OnKeybordBtns)
@@ -647,7 +643,6 @@ void RecorderPlayerKM::UpdateConnection(bool isConnected)
 
 		if(m_scrolledWindow->size()>0){
 			m_playBtn->Enable();
-			m_demoBtn->Enable();
 		}
 		
 		m_recordingBtn->Enable();
@@ -681,10 +676,6 @@ void RecorderPlayerKM::checkConnection()
 {
 	if(m_playBtn->IsEnabled()){
 		m_playBtn->Disable();
-	}
-	
-	if(m_demoBtn->IsEnabled()){
-		m_demoBtn->Disable();
 	}
 
 	m_fileDropDown->Disable();
@@ -810,7 +801,6 @@ void RecorderPlayerKM::OnAddCtrlCmd(wxCommandEvent& event)
 void RecorderPlayerKM::addCommand()
 {
 	m_dataChanged++;
-	m_demoBtn->Enable();
 	m_playBtn->Enable();
 	m_saveBtn->Enable();
 
@@ -1111,8 +1101,7 @@ void RecorderPlayerKM::SetCurrentWindow(const char* windowName)
 		}
 	}
 
-	if(m_cmdCaptureMode==CaptureMode::REL)
-	{
+	if(m_cmdCaptureMode==CaptureMode::REL){
 		WindowRect windowGeometry=getWindowRect(m_currentWindow.c_str(), true);
 		m_currentWindoRect.x=windowGeometry.m_x;
 		m_currentWindoRect.y=windowGeometry.m_y;
@@ -1400,6 +1389,9 @@ void RecorderPlayerKM::OnKeybordBtns(wxCommandEvent& event)
 		case WX::KBD::F12_BTN:
 			processInput("F12", SPKEYS::F12);
 		break;
+		case WX::KBD::Tab_BTN:
+			processInput("Tab", SPKEYS::TAB);
+		break;
 		case WX::KBD::PrtSc_BTN:
 			processInput("PrtSc", SPKEYS::SYSRQ);
 		break;
@@ -1545,13 +1537,6 @@ void RecorderPlayerKM::OnControlBtns(wxCommandEvent& event)
 				m_recordingBtn->SetLabel("Continue");
 			}
 			break;
-		case WX::DEMO:
-			{
-				m_state=State::PLAY_DEMO;
-				m_playStatus=PlayStatus::PLAYING;
-				RunCommands(ExtScrolledWindow::PlayMode::DEMO);
-			}
-			break;
 		default:
 			break;
 	};
@@ -1639,7 +1624,6 @@ void RecorderPlayerKM::OnSelectedFile(wxCommandEvent& event)
 	m_dataChanged=0;
 	if(m_scrolledWindow->loadDataFile(selectedFile.mb_str())){
 		m_indentation=false;
-		m_demoBtn->Enable();
 		m_playBtn->Enable();
 		m_saveBtn->Enable();
 		m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_scrolledWindow->getCommandCount()));
@@ -2283,6 +2267,7 @@ void RecorderPlayerKM::initPopups()
 
 			{
 				std::pair<int, wxString> buttons[]={
+					{WX::KBD::Tab_BTN, wxT("Tab")},
 					{WX::KBD::PrtSc_BTN, wxT("PrtSc")},
 					{WX::KBD::Backspace_BTN, wxT("Backspace")},
 					{WX::KBD::Enter_BTN, wxT("Enter")}
@@ -2367,7 +2352,6 @@ void RecorderPlayerKM::clearCommands()
 	m_scrolledWindow->clear();
 
 	m_recordingBtn->SetLabel(_T("Start Recording"));
-	m_demoBtn->Disable();
 	m_playBtn->Disable();
 	m_saveBtn->Disable();
 }

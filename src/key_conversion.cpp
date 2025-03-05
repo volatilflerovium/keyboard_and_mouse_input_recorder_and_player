@@ -165,6 +165,9 @@ uint KeyConversion::getKeyCode(SPKEYS keyCode, ConvCode _getKeyCode)
 				case SPKEYS::RIGHTMETA:
 					return _getKeyCode(KEY_RIGHTMETA, HID_KEY_GUI_RIGHT);
 				break;
+				case SPKEYS::TAB:
+					return _getKeyCode(KEY_TAB, HID_KEY_TAB);
+				break;
 				default:
 					return 0;
 				break;

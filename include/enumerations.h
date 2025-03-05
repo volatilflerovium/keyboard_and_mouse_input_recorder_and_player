@@ -50,7 +50,6 @@ namespace WX
 		SWAP_SCREENSHOT,
 		DELETE_CMD,
 		SETTINGS,
-		DEMO,
 		DELETE_FILE,
 		PROGRESS_TIMER,
 		_LAST,
@@ -97,6 +96,7 @@ namespace WX
 			LEFT_ALT,
 			RIGHT_ALT,
 			SUPER,
+			Tab_BTN,
 			_LAST,
 		};
 	};

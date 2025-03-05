@@ -495,6 +495,7 @@ static const std::map<std::string, int> hidShortcutParserKeyMap
 	{"PRTSC", HID_KEY_SYSREQ_ATTENTION},
 	{"BACKSPACE", HID_KEY_BACKSPACE},
 	//{"Enter", KEY_ENTER},
+	{"TAB", HID_KEY_TAB},
 	{"INS", HID_KEY_INSERT},
 	{"HOME", HID_KEY_HOME},
 	{"PGUP", HID_KEY_PAGE_UP},

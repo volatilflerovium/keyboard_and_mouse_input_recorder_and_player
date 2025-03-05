@@ -66,6 +66,7 @@ enum class SPKEYS
 	RIGHTSHIFT,
 	LEFTMETA,
 	RIGHTMETA,
+	TAB,
 	_LAST,
 };
 
