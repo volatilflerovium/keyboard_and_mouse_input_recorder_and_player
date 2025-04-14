@@ -93,7 +93,7 @@ class ExitCode
 			BASE_IMAGE_MISSING=1<<3,
 			TARGET_WINDOW_CLOSED=1<<4,
 			CV_EXCEPTION=1<<5,
-			OUT_OF_BOUND=1<<6,// when pointer is trying to get to a position outside of the screen
+			OUT_OF_BOUND=1<<6,// when mouse pointer is trying to get to a position outside of the screen
 			SYSTEM_FAILED=1<<7,
 			UNKNOWN=1<<8,
 			LAST=1<<9

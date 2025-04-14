@@ -52,6 +52,8 @@ namespace WX
 		SETTINGS,
 		DELETE_FILE,
 		PROGRESS_TIMER,
+		CMD_STATUS,
+		CTRL_CMD_MENU_EDIT,
 		_LAST,
 	};
 

@@ -23,11 +23,13 @@
 #include "utilities.h"
 
 #include <wx/wx.h>
+#include <string>
 
 class CtrlCommand;
 class WX_TextCtrl;
 class wxSpinCtrl;
 class ImagePanel;
+class LightImagePanel;
 
 //====================================================================
 
@@ -50,7 +52,7 @@ class AddCmdPopup : public ExtendedPopup
 
 		wxSpinCtrl* m_timeoutInput;
 		wxRadioBox* m_ctrlCmdModeSetRadio;
-		ImagePanel* m_previewPanel;
+		LightImagePanel* m_previewPanel;
 		wxCheckBox* m_strictRunCheck;
 
 		wxStaticText* m_instructions;
@@ -206,6 +208,28 @@ class FileListPopup : public WX_Popup
 
 		virtual void OnPopup() override;
 		virtual void OnDismiss() override;
+};
+
+//====================================================================
+
+class ResultPopup : public ExtendedPopup
+{
+	public:
+		ResultPopup(wxWindow* parent, const char* title, const std::string& baseImg);
+		virtual ~ResultPopup()=default;
+
+		void loadBaseImg(const std::string& baseImg);
+
+	protected:
+		std::string m_baseImg;
+		std::string m_sampleImg;
+		wxRadioBox* m_swapScreenshotRadio;
+		ImagePanel* m_previewPanel;
+		wxBoxSizer* m_bodySizer;
+		wxBoxSizer* m_row;
+		uint m_perc;
+
+		void setLayout();
 };
 
 //====================================================================

@@ -34,7 +34,7 @@
 #define FULL_SCREEN "root"
 #define SCREEN_BACKGROUND "background.png"
 
-#define CMD_LIST_WIDTH 380
+#define CMD_LIST_WIDTH 490
 #define CMD_LIST_HEIGHT 450
 
 extern MouseEmulatorI* s_MouseEmulator;
@@ -2018,8 +2018,7 @@ void RecorderPlayerKM::initPopups()
 									wxT("Window name: "));
 
 			m_screenshotInput=screenshotPopup->builder<wxTextCtrl>(wxID_ANY, wxT(""),
-								wxDefaultPosition, FromDIP(wxSize(250, 30)),
-								wxTE_LEFT, s_fileValidator);
+								wxDefaultPosition, FromDIP(wxSize(250, 30)), wxTE_LEFT);
 
 			auto cancelBtn =screenshotPopup->builder<wxButton>(wxID_ANY, wxT("Cancel"));
 			cancelBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event){

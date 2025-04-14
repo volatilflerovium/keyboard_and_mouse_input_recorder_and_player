@@ -22,6 +22,9 @@
 
 #include "input_command.h"
 #include "event_definitions.h"
+#include "enumerations.h"
+
+#include "dedicated_popups.h"
 
 //====================================================================
 
@@ -89,6 +92,9 @@ BEGIN_EVENT_TABLE(CommandPanel, BasePanel)
 	EVT_CHECKBOX(EvtID::ID, CommandPanel::OnCheck)
 	EVT_LEFT_DOWN(CommandPanel::MouseLeftBtnDown)
 	EVT_CONTEXT_MENU(CommandPanel::OnContextMenu)
+
+	EVT_BUTTON(WX::CMD_STATUS, CommandPanel::OnCheckStatus)
+	
 END_EVENT_TABLE()
 
 //--------------------------------------------------------------------
@@ -134,17 +140,18 @@ void CommandPanel::init(bool indentation)
 		wxPostEvent(this, event2);
    });// */
 
-	m_statusBtn=new wxButton(m_handlerPtr, wxID_ANY, wxT(""),
-		wxDefaultPosition, wxSize(20,20), wxNO_BORDER | wxBU_EXACTFIT);// | wxBU_NOTEXT);
+	m_statusBtn=new wxButton(m_handlerPtr, WX::CMD_STATUS, wxT(""),
+		wxDefaultPosition, wxSize(20,20), wxNO_BORDER | wxBU_EXACTFIT);
 
-	auto cmdPtr=m_baseCommandPtr;
-	m_statusBtn->Bind(wxEVT_BUTTON, [cmdPtr](wxCommandEvent& evnt){
-		wxString msg=wxString::Format(wxT("Error: %s."),
-		ExitCode::getExitCodeMsg(cmdPtr->getExitCode()));
-		wxMessageBox(msg);
-	});
 	m_statusBtn->Disable();
+}
 
+//--------------------------------------------------------------------
+
+void CommandPanel::OnCheckStatus(wxCommandEvent& event)
+{
+	wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(m_baseCommandPtr->getExitCode()));
+	wxMessageBox(msg);
 }
 
 //--------------------------------------------------------------------
@@ -217,6 +224,10 @@ InputCommandWrapper::InputCommandWrapper(wxWindow* parent, uint posY, uint width
 	}
 }
 
+BEGIN_EVENT_TABLE(InputCommandWrapper, CommandPanel)
+END_EVENT_TABLE()
+
+//--------------------------------------------------------------------
 
 void InputCommandWrapper::setTimeoutCtrl()
 {
@@ -232,6 +243,8 @@ void InputCommandWrapper::setTimeoutCtrl()
 		wxPostEvent(this, event2);
    });
 }
+
+//--------------------------------------------------------------------
 
 void InputCommandWrapper::init(bool indentation)
 {
@@ -287,11 +300,55 @@ void InputCommandWrapper::init(bool indentation)
 
 ControlCommandWrapper::ControlCommandWrapper(wxWindow* parent, uint posY, uint width, BaseCommand* cmd)
 :CommandPanel(parent, posY, width, cmd)
-{}
+, m_imgCtrlViewrPtr(nullptr)
+{
+	Bind(wxEVT_MENU, [this](wxCommandEvent& evnt){
+		wxCommandEvent event(wxEVT_CUSTOM_EVENT, EvtID::EDIT_CTRL_CMD);
+		event.SetClientData(m_baseCommandPtr);
+		wxPostEvent(this, event);
+	}, WX::CTRL_CMD_MENU_EDIT);	
+}
+
+//--------------------------------------------------------------------
 
 BEGIN_EVENT_TABLE(ControlCommandWrapper, CommandPanel)
 	EVT_CHECKBOX(EvtID::ID, ControlCommandWrapper::OnCheck)
+	EVT_CONTEXT_MENU(ControlCommandWrapper::OnContextMenu)
 END_EVENT_TABLE()
+
+//--------------------------------------------------------------------
+
+void ControlCommandWrapper::mkContextMenu()
+{
+	if(m_isSelected){
+		wxMenu menu;
+		menu.Append(WX::CTRL_CMD_MENU_EDIT, wxT("Edit"));
+		menu.Append(WX::DELETE_CMD, wxT("Delete"));
+		popupMenu(this, &menu);
+	}
+}
+
+//--------------------------------------------------------------------
+
+void ControlCommandWrapper::OnCheckStatus(wxCommandEvent& event)
+{
+	if(ExitCode::FAILED<(m_baseCommandPtr->getExitCode()&~1)){
+		wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(m_baseCommandPtr->getExitCode()));
+		wxMessageBox(msg);
+	}
+	else{
+		CtrlCommand* ctrlCmdPtr=dynamic_cast<CtrlCommand*>(m_baseCommandPtr);
+		if(ctrlCmdPtr){
+			if(!m_imgCtrlViewrPtr){
+				m_imgCtrlViewrPtr=new ResultPopup(this, "Image for Ctrl Command", ctrlCmdPtr->getBaseImg());
+			}
+			else{
+				m_imgCtrlViewrPtr->loadBaseImg(ctrlCmdPtr->getBaseImg());
+			}
+			m_imgCtrlViewrPtr->Popup();
+		}
+	}
+}
 
 //--------------------------------------------------------------------
 
@@ -322,16 +379,6 @@ void ControlCommandWrapper::init(bool indentation)
 
 	updateTimeout(ctrlCmdPtr->getTimeout());
 
-	m_edit=new wxButton(m_handlerPtr, EvtID::ID, wxT("Edit"), wxDefaultPosition,
-	wxSize(30,23), wxNO_BORDER| wxBU_EXACTFIT);
-
-	Bind(wxEVT_BUTTON, [this](wxCommandEvent& evnt){
-		wxCommandEvent event(wxEVT_CUSTOM_EVENT, EvtID::EDIT_CTRL_CMD);
-		event.SetClientData(m_baseCommandPtr);
-		wxPostEvent(this, event);
-		
-	}, EvtID::ID);
-
 	// Layout
 
 	wxBoxSizer* row1=new wxBoxSizer(wxHORIZONTAL);
@@ -344,7 +391,7 @@ void ControlCommandWrapper::init(bool indentation)
 	row2->Add(timeoutText, 0);
 	row2->Add(m_timeoutInput, 0);
 	row2->AddStretchSpacer();
-	row2->Add(m_edit, 0, wxRIGHT, 5);
+	//row2->Add(m_edit, 0, wxRIGHT, 5);
 	row2->Add(m_statusBtn, 0);
 
 	m_mainCol= new wxBoxSizer(wxVERTICAL);
@@ -369,18 +416,6 @@ void ControlCommandWrapper::init(bool indentation)
 	m_height=this->GetMinHeight();
 	int parentWidth=GetParent()->GetSize().GetWidth();
 	this->SetSize(parentWidth-10, m_height);
-}
-
-//--------------------------------------------------------------------
-
-void ControlCommandWrapper::enableCommand(bool enable)
-{
-	CommandPanel::enableCommand(enable);
-	if(enable){
-		m_edit->Enable();
-		return;
-	}
-	m_edit->Disable();
 }
 
 //====================================================================

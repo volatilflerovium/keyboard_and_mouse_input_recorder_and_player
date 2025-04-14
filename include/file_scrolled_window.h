@@ -45,11 +45,6 @@ class FilePanel : public WrapperPanel<FilePanel, 10, 2, WX::DELETE_FILE>
 		wxString m_fileName;
 		WX_TextCtrl* m_fileNameInput;
 
-		virtual void setSelected() override
-		{
-			s_lastSelected=this;
-		}
-
 		DECLARE_EVENT_TABLE()
 
 		friend class FileScrolledWindow;

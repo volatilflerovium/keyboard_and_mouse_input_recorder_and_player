@@ -66,6 +66,9 @@ class BasePanel : public wxPanel
 		virtual bool isPanel(PanelType panelType) const=0;
 
 		virtual int getHeight() const=0;
+		
+		virtual void reset()
+		{}
 
 		virtual void enableStatus()
 		{}
@@ -184,7 +187,7 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 {
 	public:
 		CommandPanel(wxWindow* parent, uint posY, uint width, BaseCommand* cmd)
-		:WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, BasePanel>(parent, posY, width)
+		: WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, BasePanel>(parent, posY, width)
 		{
 			m_baseCommandPtr=cmd;
 		}
@@ -223,7 +226,13 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 		}
 
 		virtual void enableStatus() override;
-
+		
+		virtual void reset() override
+		{
+			m_statusBtn->SetBackgroundColour(wxColour("#FFFFFF"));
+			SetBackgroundColour(wxColour("#FFFFFF"));
+		}
+		
 	protected:
 		BaseCommand* m_baseCommandPtr{nullptr};
 		wxBoxSizer* m_mainCol;
@@ -237,15 +246,16 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 
 		bool m_isIndented{false};
 
-		virtual void setSelected() override
+		/*virtual void setSelected() override
 		{
 			s_lastSelected=this;
-		}
+		}// */
 
 		static constexpr int c_padding=30;
 
 		virtual void setTimeoutCtrl()=0;
 		virtual void OnCheck(wxCommandEvent& event);
+		virtual void OnCheckStatus(wxCommandEvent& event);
 
 		DECLARE_EVENT_TABLE()
 
@@ -270,9 +280,12 @@ class InputCommandWrapper : public CommandPanel
 		static wxFloatingPointValidator<float> s_floatValidator;
 		static bool s_isValidatorSet;
 
+	DECLARE_EVENT_TABLE()
 };
 
 //====================================================================
+
+class ResultPopup;
 
 class ControlCommandWrapper : public CommandPanel
 {
@@ -283,8 +296,6 @@ class ControlCommandWrapper : public CommandPanel
 
 		virtual void init(bool indentation=false);
 
-		virtual void enableCommand(bool enable);
-
 		void updateTimeout(int timeout)
 		{
 			m_timeoutInput->ChangeValue(wxString::Format("%i", timeout));
@@ -292,9 +303,11 @@ class ControlCommandWrapper : public CommandPanel
 
 	protected:
 		virtual void setTimeoutCtrl() override;
+		virtual void OnCheckStatus(wxCommandEvent& event) override;
+		virtual void mkContextMenu();
 
 	private:
-		wxButton* m_edit;
+		ResultPopup* m_imgCtrlViewrPtr;
 
 		DECLARE_EVENT_TABLE()
 };

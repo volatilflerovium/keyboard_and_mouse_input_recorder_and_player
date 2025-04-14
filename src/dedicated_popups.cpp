@@ -19,6 +19,7 @@
 #include "dedicated_popups.h"
 
 #include "image_panel.h"
+#include "light_image_panel.h"
 #include "event_definitions.h"
 #include "input_command.h"
 #include "enumerations.h"
@@ -30,14 +31,28 @@
 #include <wx/valnum.h>
 #include <wx/spinctrl.h>
 #include <wx/window.h>
+#include <wx/display.h>
 
 #include <filesystem>
 
 #define MAX_PREVIEW_WIDTH 230
 #define MAX_PREVIEW_HEIGHT 230
 
-
 extern wxIntegerValidator<unsigned int> s_integerValidator;
+
+//====================================================================
+
+static uint getImageMaxPerc(const char* imageName, std::function<int(int, int)> cbk, int heightPadding=50)
+{
+	std::string cmd="identify -format \"%[fx:h]\" ";
+	cmd.append(getImgPath(imageName));
+
+	uint perc=100;
+	exeCommand<64>(cmd.c_str(), [&perc, cbk, heightPadding](const std::string& output){
+		perc=cbk(std::atoi(output.c_str()), heightPadding);
+	});
+	return perc;
+}
 
 //====================================================================
 
@@ -87,8 +102,12 @@ void AddCmdPopup::init()
 
 	m_previewTxt=new wxStaticText(this, wxID_ANY, wxT("Preview"));
 
+	/*
 	m_previewPanel=new ImagePanel(this, wxID_ANY, wxDefaultPosition,
 									FromDIP(wxSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)));
+	// */
+
+	m_previewPanel=new LightImagePanel(this, FromDIP(wxSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)));
 
 	m_thresholdTxt=new wxStaticText(this, wxID_ANY, wxT("Image simililarity index:"));
 
@@ -96,7 +115,7 @@ void AddCmdPopup::init()
 										wxDefaultSize, wxSP_ARROW_KEYS, 0, 441, 240);
 
 	m_strictRunCheck=builder<wxCheckBox>(wxID_ANY, wxT("Terminate session on failure"));
-
+	m_strictRunCheck->SetValue(true);
 	/*
 	("The less the more restrictive. Max 440.\nSee the documentation for more info."));
 	// */
@@ -110,8 +129,8 @@ void AddCmdPopup::layout()
 	leftCol->Add(m_previewTxt, 0, wxALIGN_TOP | wxBOTTOM, FromDIP(10));
 
 	wxBoxSizer* leftRowCol = new wxBoxSizer(wxHORIZONTAL);
-	leftRowCol->SetMinSize(FromDIP(wxSize(MAX_PREVIEW_WIDTH, 10)));
-	leftRowCol->Add(m_previewPanel, 0, wxALIGN_CENTER_VERTICAL);
+	//leftRowCol->SetMinSize(FromDIP(wxSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)));
+	leftRowCol->Add(m_previewPanel, 1, wxALIGN_CENTER_VERTICAL);
 	leftCol->Add(leftRowCol, 1,  wxCENTER);
 
 	wxBoxSizer* bodyRow = new wxBoxSizer(wxHORIZONTAL);
@@ -164,7 +183,7 @@ void AddCmdPopup::loadRoi(const char* imgName, const char* roi, const char* wind
 	m_imgName=imgName;
 	m_roi=roi;
 	m_windowName=windowName;
-	m_previewPanel->loadBackground(getImgPath(imgName).c_str());
+	m_previewPanel->replaceImage(getImgPath(imgName).c_str());
 	Layout();
 }
 
@@ -259,9 +278,15 @@ void EditCtrlCmdPopup::layout()
 	leftCol->SetMinSize(FromDIP(wxSize(MAX_PREVIEW_WIDTH, 10)));
 	leftCol->Add(m_previewTxt, 0, wxBOTTOM, FromDIP(10));
 
+	wxBoxSizer* vBox = new wxBoxSizer(wxVERTICAL);
+	vBox->Add(m_previewPanel, 1, wxALIGN_CENTER_HORIZONTAL);
+
 	wxBoxSizer* imageRow=new wxBoxSizer(wxHORIZONTAL);
-	imageRow->Add(m_previewPanel, 1, wxALIGN_CENTER_VERTICAL);
-	leftCol->Add(imageRow , 1, wxCENTER | wxBOTTOM, FromDIP(10));
+	imageRow->SetMinSize(FromDIP(wxSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)));
+
+	imageRow->Add(vBox, 1, wxALIGN_CENTER_VERTICAL);
+
+	leftCol->Add(imageRow , 0, wxCENTER | wxBOTTOM, FromDIP(10));
 
 	leftCol->Add(m_updateScreenshotBtn, 0, wxBOTTOM | wxCENTER, FromDIP(3));
 	leftCol->Add(m_swapScreenshotRadio, 0, wxCENTER);
@@ -285,10 +310,11 @@ void EditCtrlCmdPopup::layout()
 	wxBoxSizer* buttonRow = new wxBoxSizer(wxHORIZONTAL);
 	buttonRow->Add(m_cancelBtn, 0, wxRIGHT, FromDIP(10));
 	buttonRow->Add(m_summitBtn, 0);
+	rightCol->Add(1, 1, wxEXPAND);
 	rightCol->Add(buttonRow, 0, wxALIGN_RIGHT);
 
 	wxBoxSizer* bodyRow = new wxBoxSizer(wxHORIZONTAL);
-	bodyRow->Add(leftCol, 1, wxRIGHT | wxEXPAND, FromDIP(10));
+	bodyRow->Add(leftCol, 0, wxRIGHT | wxEXPAND, FromDIP(10));
 	bodyRow->Add(rightCol, 1, wxEXPAND);
 
 	setSizer(bodyRow);
@@ -307,7 +333,7 @@ void EditCtrlCmdPopup::OnSwapScreenshot(wxCommandEvent& event)
 			imgPath=getImgPath(m_ctrlCmdPtr->getBaseImg());
 		}
 
-		m_previewPanel->loadBackground(imgPath.c_str());
+		m_previewPanel->loadImage(imgPath.c_str());
 		Layout();
 	}
 }
@@ -327,11 +353,11 @@ bool EditCtrlCmdPopup::loadCommand(CtrlCommand* ctrlCmdPtr)
 		m_ctrlCmdModeSetRadio->SetSelection(similarity);
 
 		if(imageExists(m_ctrlCmdPtr->getBaseImg())){
-			m_previewPanel->loadBackground(getImgPath(m_ctrlCmdPtr->getBaseImg()).c_str(), wxBITMAP_TYPE_PNG);
+			m_previewPanel->loadImage(getImgPath(m_ctrlCmdPtr->getBaseImg()).c_str());
 		}
 		else{
 			std::string imgNotFound=resourcePath("icons/image_not_found.png");
-			m_previewPanel->loadBackground(imgNotFound.c_str(), wxBITMAP_TYPE_PNG);
+			m_previewPanel->loadImage(imgNotFound.c_str());
 		}
 
 		m_timeoutInput->SetValue(m_ctrlCmdPtr->getTimeout());
@@ -406,7 +432,19 @@ WindowPreview::WindowPreview(wxWindow* parent, const char* title)
 
 void WindowPreview::loadImage(const char* imageName)
 {
-	m_previewPanel->loadBackground(getImgPath(imageName).c_str(), wxBITMAP_TYPE_PNG);
+	uint perc=getImageMaxPerc(imageName, [](int imgHeight, int heightPadding){
+		float h=0.5*(wxDisplay().GetClientArea().GetHeight()-heightPadding);
+		int perc=100;
+		if(imgHeight>h){
+			perc=h*100.0/imgHeight;
+			if(perc>100){
+				perc=100;
+			}
+		}
+		return perc;
+	});
+
+	m_previewPanel->loadBackground(getImgPath(imageName).c_str(), wxBITMAP_TYPE_PNG, perc);
 
 	if(m_imageHolder){
 		m_imageHolder->Detach(m_previewPanel);
@@ -422,6 +460,7 @@ void WindowPreview::loadImage(const char* imageName)
 	tmpBodySizer->Add(m_btnsRow, 0, wxALIGN_RIGHT);
 
 	setSizer(tmpBodySizer);
+	Layout();
 	
 	m_bodySizer=tmpBodySizer;
 	m_imageHolder=tmpImageHolder;
@@ -476,6 +515,93 @@ void FileListPopup::OnPopup()
 	for(auto& file : commandFiles){
 		m_fileScrolledWindow->addFilePanel(file.c_str(), m_openFile==file);
 	}
+}
+
+//====================================================================
+
+ResultPopup::ResultPopup(wxWindow* parent, const char* title, const std::string& baseImg)
+:ExtendedPopup(parent, title)
+, m_baseImg(baseImg)
+, m_sampleImg("sample_"+m_baseImg)
+, m_bodySizer(nullptr)
+, m_row(nullptr)
+, m_perc(100)
+{
+	m_previewPanel=new ImagePanel(this, wxID_ANY, wxDefaultPosition);
+
+	ArrayStringType choicesSreen(2,"");
+	choicesSreen[0]="Expected";
+	choicesSreen[1]="Got";
+
+	m_swapScreenshotRadio = new wxRadioBox(this, WX::SWAP_SCREENSHOT, "", 
+											wxDefaultPosition, wxDefaultSize, 
+											choicesSreen, 2, wxRA_HORIZONTAL);
+
+	m_swapScreenshotRadio->SetSelection(0);
+
+	setOnClose([this](){
+		m_swapScreenshotRadio->SetSelection(0);
+	});
+
+	setOnDismissCallback([this](wxWindow*){
+		m_swapScreenshotRadio->SetSelection(0);
+	});
+
+	Bind(wxEVT_RADIOBOX, [this](wxCommandEvent& evnt){		
+		if(m_swapScreenshotRadio->GetSelection()==1){
+			m_previewPanel->loadBackground(getImgPath(m_sampleImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
+		}
+		else{
+			m_previewPanel->loadBackground(getImgPath(m_baseImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
+		}
+	});
+
+	setLayout();
+}
+
+//--------------------------------------------------------------------
+
+void ResultPopup::loadBaseImg(const std::string& baseImg)
+{
+	if(m_baseImg!=baseImg){
+		m_baseImg=baseImg;
+		m_sampleImg="sample_"+m_baseImg;
+
+		setLayout();
+	}
+}
+
+//--------------------------------------------------------------------
+
+void ResultPopup::setLayout()
+{
+	m_perc=getImageMaxPerc(m_baseImg.c_str(), [](int imgHeight, int heightPadding){
+		int perc=100;
+		if(imgHeight+heightPadding>wxDisplay().GetClientArea().GetHeight()){
+			perc=100.0*(imgHeight-heightPadding)/(1.0*imgHeight);
+		}
+		return perc;
+	});
+
+	m_previewPanel->loadBackground(getImgPath(m_baseImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
+
+	if(m_row){
+		m_row->Detach(m_previewPanel);
+		m_bodySizer->Detach(m_row);
+		m_bodySizer->Detach(m_swapScreenshotRadio);
+	}
+
+	auto tmpRow=new wxBoxSizer(wxHORIZONTAL);
+	tmpRow->Add(m_previewPanel , 1, wxEXPAND | wxCENTER);
+
+	auto tmpBodySizer=new wxBoxSizer(wxVERTICAL);
+	tmpBodySizer->Add(tmpRow, 1, wxEXPAND | wxCENTER | wxBOTTOM, FromDIP(10));
+	tmpBodySizer->Add(m_swapScreenshotRadio, 0, wxCENTER);
+
+	setSizer(tmpBodySizer);
+
+	m_bodySizer=tmpBodySizer;
+	m_row=tmpRow;
 }
 
 //====================================================================

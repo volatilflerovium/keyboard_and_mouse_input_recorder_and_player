@@ -89,7 +89,7 @@ class BasicPopup : public wxFrame
 inline void BasicPopup::setSizer(wxBoxSizer* box, bool deleteOld)
 {
 	wxBoxSizer* boxWrapper = new wxBoxSizer(wxHORIZONTAL);
-	boxWrapper->Add(box, 0, wxALL, FromDIP(10));
+	boxWrapper->Add(box, 1, wxEXPAND | wxALL, FromDIP(10));
 	this->SetSizerAndFit(boxWrapper, deleteOld);
 }
 

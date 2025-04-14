@@ -47,11 +47,16 @@ class wxBackgroundBitmap : public wxEvtHandler
 		 * the bitmap explicitly, the bitmap will be destroyed automatically 
 		 * by wxWidgets when the application exits.
 		 * */
-		virtual ~wxBackgroundBitmap()=default;
+		virtual ~wxBackgroundBitmap()
+		{
+			delete m_bitmap;
+		}
+		
 		virtual bool ProcessEvent(wxEvent& Event);
 
 		void loadImage(wxBitmap* bitmap);
 		void loadImage(const char* imagePath, wxBitmapType bitmapType, uint rWidth, uint rHeight);
+		void loadImage(const char* imagePath, wxBitmapType bitmapType, uint perc);
 		void loadImage(const char* imagePath, wxBitmapType bitmapType);
 		int getWidth() const;
 		int getHeight() const;
@@ -208,6 +213,7 @@ class ImagePanel : public BaseBackground<wxPanel>
 		virtual ~ImagePanel()=default;
 
 		virtual void loadBackground(const char* imagePath, wxBitmapType bitmapType=wxBITMAP_TYPE_PNG);
+		virtual void loadBackground(const char* imagePath, wxBitmapType bitmapType, uint percent);
 
 	protected:
 		wxString m_path;

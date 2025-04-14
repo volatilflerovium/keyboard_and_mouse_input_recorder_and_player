@@ -275,7 +275,7 @@ void ExtScrolledWindow::reset()
 	m_init=false;
 	m_previousPanel=nullptr;
 	for(auto panelPtr : m_cmdViewList){
-		panelPtr->SetBackgroundColour(wxColour("#FFFFFF"));
+		panelPtr->reset();
 	}
 }
 

@@ -88,7 +88,8 @@ kmRecorderAndPlayer:
 - [Startup](https://odysee.com/@volatilflerovium:3/Quick_start_setup:c)
 - [Claudflare turnstile](https://odysee.com/@volatilflerovium:3/captchat_example:f)
 - [Image comparison tool](https://odysee.com/@volatilflerovium:3/image_comparison_tool_example:7)
-- [GUI testing](https://odysee.com/@volatilflerovium:3/GUI_testing:4)
+- [GUI testing](https://odysee.com/@volatilflerovium:3/testing_gui:6)
+- [Another GUI testing](https://odysee.com/@volatilflerovium:3/GUI_testing:4)
 - [Download images](https://odysee.com/@volatilflerovium:3/download_imgs:c)
 
 ## Interface Method

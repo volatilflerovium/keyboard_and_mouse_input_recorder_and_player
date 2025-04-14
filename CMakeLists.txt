@@ -1,5 +1,3 @@
-# --------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.13)
 project("K_and_M_recorder_player")
 
@@ -14,22 +12,15 @@ find_package(Threads REQUIRED)
 #--------------------------------------------------------------------- 
 ## Please set your wxWidgets configuration here
 #--------------------------------------------------------------------- 
- 
-# Here you can define what libraries of wxWidgets you need for your
-# application. You can figure out what libraries you need here;
-# https://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-# We need the Find package for wxWidgets to work
-# NOTE: if you're using aui, include aui in this required components list.
-
-# It was noticed that when using MinGW gcc it is essential that 'core' is mentioned before 'base'.
-find_package(wxWidgets COMPONENTS core base REQUIRED)
- 
-#---------------------------------------------------------------------
-## Actual config file starts here
-#---------------------------------------------------------------------
- 
-# wxWidgets include (this will do all the magic to configure everything)
-include("${wxWidgets_USE_FILE}")
+if(DEFINED "ENV{WXWIDGETS_PATH}")
+	find_package(wxWidgets REQUIRED 
+		PATHS "$ENV{WXWIDGETS_PATH}" NO_DEFAULT_PATH
+		COMPONENTS core base
+	)
+else()
+	find_package(wxWidgets COMPONENTS core base REQUIRED)
+	include("${wxWidgets_USE_FILE}")
+endif()
 
 #--------------------------------------------------------------------- 
 
@@ -104,6 +95,7 @@ set(SOURCES1
 	src/key_conversion.cpp
 	src/progress_bar.cpp
 	src/wx_worker.cpp
+	src/light_image_panel.cpp
 )
 
 add_executable(

@@ -23,6 +23,7 @@
 #include <wx/panel.h>
 #include <wx/menu.h>
 
+#include "debug_utils.h"
 //====================================================================
 
 template<typename W, bool= std::is_base_of<wxPanel, W>::value>
@@ -65,7 +66,12 @@ class WrapperPanel : public BaseWrapperPanel<WXPANEL>
 	public:
 		WrapperPanel(wxWindow* parent, uint posY, uint width);
 
-		virtual ~WrapperPanel()=default;
+		virtual ~WrapperPanel()
+		{
+			if(s_lastSelected==this){
+				s_lastSelected=nullptr;
+			}
+		}
 
 		virtual bool isSelected() const
 		{
@@ -75,7 +81,7 @@ class WrapperPanel : public BaseWrapperPanel<WXPANEL>
 	protected:
 		static constexpr int _TOP_MARGIN_PADDING=M;
 		static constexpr int _MARGIN_WIDTH=N;
-		static T* s_lastSelected;
+		static WrapperPanel* s_lastSelected;
 		wxPanel* m_handlerPtr;
 		bool m_isSelected{false};
 
@@ -89,9 +95,14 @@ class WrapperPanel : public BaseWrapperPanel<WXPANEL>
 			panel->PopupMenu(menu);
 		}
 
-		virtual void setSelected()=0;
-		void highlight(bool select=false);
+		template<typename E, typename FUNC>
+		void binding(wxPanel* panel, E eventType, FUNC cbk)
+		{
+			panel->Bind(eventType, cbk);
+		}
 
+		void setSelected();
+		virtual void mkContextMenu();
 		void MouseLeftBtnDown(wxMouseEvent& event);
 		void OnContextMenu(wxContextMenuEvent& event);
 };
@@ -99,7 +110,9 @@ class WrapperPanel : public BaseWrapperPanel<WXPANEL>
 //====================================================================
 
 template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-T* WrapperPanel<T, M, N, WX_ID, WXPANEL>::s_lastSelected=nullptr;
+WrapperPanel<T, M, N, WX_ID, WXPANEL>* WrapperPanel<T, M, N, WX_ID, WXPANEL>::s_lastSelected=nullptr;
+
+//--------------------------------------------------------------------
 
 template<typename T, int M, int N, int WX_ID, typename WXPANEL>
 WrapperPanel<T, M, N, WX_ID, WXPANEL>::WrapperPanel(wxWindow* parent, uint posY, uint width)
@@ -112,6 +125,24 @@ WrapperPanel<T, M, N, WX_ID, WXPANEL>::WrapperPanel(wxWindow* parent, uint posY,
 		wxPoint(_MARGIN_WIDTH, _TOP_MARGIN_PADDING),
 		wxSize(width-2*_MARGIN_WIDTH, -1)	
 	);
+
+	binding(this, wxEVT_ENTER_WINDOW, [this](wxMouseEvent&){
+		setBackgroundColour(this, wxColour("#8b88f1"));
+	});
+
+	binding(this, wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&){
+		if(m_isSelected){
+			return;
+		}
+		wxPoint mousePosition=wxWindow::ScreenToClient(wxGetMousePosition());
+		if(mousePosition.x>0 && mousePosition.x<+this->GetSize().GetWidth()){
+			if(mousePosition.y>0 && mousePosition.y<this->GetSize().GetHeight()){
+				return;
+			}
+		}
+		setBackgroundColour(this, wxColour("#ffffff"));
+	});
+
 	m_handlerPtr->SetMinSize(wxSize(width-2*_MARGIN_WIDTH, -1));
 
 	m_handlerPtr->SetBackgroundColour(wxColour("#FFFFFF"));
@@ -120,15 +151,31 @@ WrapperPanel<T, M, N, WX_ID, WXPANEL>::WrapperPanel(wxWindow* parent, uint posY,
 //--------------------------------------------------------------------
 
 template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-void WrapperPanel<T, M, N, WX_ID, WXPANEL>::highlight(bool select)
+void WrapperPanel<T, M, N, WX_ID, WXPANEL>::mkContextMenu()
 {
-	if(m_isSelected || select){
-		m_isSelected=false;
-		setBackgroundColour(this, wxColour("#FFFFFF"));
+	if(m_isSelected){
+		wxMenu menu;
+		menu.Append(WX_ID, wxT("Delete"));
+		popupMenu(this, &menu);
+	}
+}
+//--------------------------------------------------------------------
+
+template<typename T, int M, int N, int WX_ID, typename WXPANEL>
+void WrapperPanel<T, M, N, WX_ID, WXPANEL>::setSelected()
+{
+	if(s_lastSelected){
+		s_lastSelected->m_isSelected=false;
+		s_lastSelected->SetBackgroundColour(wxColour("#FFFFFF"));
+	}
+
+	if(s_lastSelected==this){
+		s_lastSelected=nullptr;	
 	}
 	else{
-		m_isSelected=true;
 		setBackgroundColour(this, wxColour("#8b88f1"));
+		s_lastSelected=this;
+		m_isSelected=true;
 	}
 }
 
@@ -137,13 +184,7 @@ void WrapperPanel<T, M, N, WX_ID, WXPANEL>::highlight(bool select)
 template<typename T, int M, int N, int WX_ID, typename WXPANEL>
 void WrapperPanel<T, M, N, WX_ID, WXPANEL>::MouseLeftBtnDown(wxMouseEvent& event)
 {
-	if(s_lastSelected && s_lastSelected!=this){
-		s_lastSelected->highlight(true);
-	}
-
 	setSelected();
-
-	highlight();
 }
 
 //--------------------------------------------------------------------
@@ -151,11 +192,10 @@ void WrapperPanel<T, M, N, WX_ID, WXPANEL>::MouseLeftBtnDown(wxMouseEvent& event
 template<typename T, int M, int N, int WX_ID, typename WXPANEL>
 void WrapperPanel<T, M, N, WX_ID, WXPANEL>::OnContextMenu(wxContextMenuEvent& event)
 {
-	if(m_isSelected){
-		wxMenu menu;
-		menu.Append(WX_ID, wxT("Delete"));
-		popupMenu(this, &menu);
+	if(!m_isSelected){
+		setSelected();
 	}
+	mkContextMenu();
 }
 
 //====================================================================

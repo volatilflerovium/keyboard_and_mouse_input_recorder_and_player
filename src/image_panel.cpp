@@ -47,6 +47,22 @@ void wxBackgroundBitmap::loadImage(const char* imagePath, wxBitmapType bitmapTyp
 
 //--------------------------------------------------------------------
 
+void wxBackgroundBitmap::loadImage(const char* imagePath, wxBitmapType bitmapType, uint perc)
+{
+	loadImage(imagePath, bitmapType);
+
+	if(perc==0){
+		return;
+	}
+
+	int width=m_bitmap->GetWidth()*(perc/100.0);
+	int height=m_bitmap->GetHeight()*(perc/100.0);
+
+	*m_bitmap=(m_bitmap->ConvertToImage()).Scale(width, height, wxIMAGE_QUALITY_HIGH);
+}
+
+//--------------------------------------------------------------------
+
 bool wxBackgroundBitmap::ProcessEvent(wxEvent& Event)
 {
 	if(Event.GetEventType() == wxEVT_ERASE_BACKGROUND){
@@ -78,6 +94,25 @@ void ImagePanel::loadBackground(const char* imagePath, wxBitmapType bitmapType)
 
 	SetSize(width, height);
 	SetMinSize(wxSize(width, height));
+
+	setEventHandler();
+}
+
+//--------------------------------------------------------------------
+
+void ImagePanel::loadBackground(const char* imagePath, wxBitmapType bitmapType, uint percent)
+{
+	m_path=imagePath;
+
+	m_background.loadImage(imagePath, bitmapType, percent);
+
+	int width=m_background.getWidth();
+	int height=m_background.getHeight();
+
+	SetMinSize(FromDIP(wxSize(width, height)));
+	SetSize(FromDIP(wxSize(width, height)));
+	Refresh();
+	Update();
 
 	setEventHandler();
 }
