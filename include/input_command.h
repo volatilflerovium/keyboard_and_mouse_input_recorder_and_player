@@ -531,6 +531,15 @@ class MouseDragCommand : public InputCommand, public WindowOffset
 
 //====================================================================
 
+typedef std::function<void(void)> VVCBK;
+
+enum class HANDLERS
+{
+	UPDATE_TIMEOUT=0,
+	BLOCK_STATIC_BTN,
+	TOTAL_HANDLERS,
+};
+
 class CtrlCommand : public BaseCommand, public WindowOffset
 {
 	typedef std::function<bool()> CKR;
@@ -654,7 +663,18 @@ class CtrlCommand : public BaseCommand, public WindowOffset
 			m_strictRun=restriction;
 		}
 
+		void addHandler(HANDLERS identifier, VVCBK cbk)
+		{
+			m_handlers[static_cast<size_t>(identifier)]=cbk;
+		}
+
+		void fireEvent(HANDLERS identifier)
+		{
+			m_handlers[static_cast<size_t>(identifier)]();
+		}
+
 	protected:
+		VVCBK m_handlers[static_cast<size_t>(HANDLERS::TOTAL_HANDLERS)];
 		std::string m_baseImageName;
 		std::string m_roiStr;
 		CKR m_cbk;

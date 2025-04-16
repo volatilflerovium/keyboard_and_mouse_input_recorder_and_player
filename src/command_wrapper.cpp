@@ -73,7 +73,6 @@ CloseLoopPanel::CloseLoopPanel(wxWindow* parent, uint posY, uint width)
 	wxStaticText* loopDescription=new wxStaticText(this, wxID_ANY, wxT("End Loop"));
 
 	wxBoxSizer* row=new wxBoxSizer(wxHORIZONTAL);
-	//row->SetMinSize(w, 10);
 	row->Add(loopDescription, 1, wxEXPAND);
 
 	wxBoxSizer* col=new wxBoxSizer(wxVERTICAL);
@@ -127,18 +126,6 @@ void CommandPanel::init(bool indentation)
 	});
 
 	setTimeoutCtrl();
-	/*
-	m_timeoutInput = new WX_TextCtrl(m_handlerPtr, wxID_ANY, wxT("1"), wxDefaultPosition,
-								wxSize(80, 23), wxNO_BORDER, s_integerValidator);
-
-	m_timeoutInput->setCallback([this](const char* val){
-		m_baseCommandPtr->updateTime(std::atoi(val));
-	});
-
-	m_timeoutInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
-		wxCommandEvent event2(wxEVT_CUSTOM_EVENT, EvtID::CHANGES_MADE);
-		wxPostEvent(this, event2);
-   });// */
 
 	m_statusBtn=new wxButton(m_handlerPtr, WX::CMD_STATUS, wxT(""),
 		wxDefaultPosition, wxSize(20,20), wxNO_BORDER | wxBU_EXACTFIT);
@@ -306,7 +293,19 @@ ControlCommandWrapper::ControlCommandWrapper(wxWindow* parent, uint posY, uint w
 		wxCommandEvent event(wxEVT_CUSTOM_EVENT, EvtID::EDIT_CTRL_CMD);
 		event.SetClientData(m_baseCommandPtr);
 		wxPostEvent(this, event);
-	}, WX::CTRL_CMD_MENU_EDIT);	
+	}, WX::CTRL_CMD_MENU_EDIT);
+
+	auto ctrlCmdPtr=dynamic_cast<CtrlCommand*>(m_baseCommandPtr);
+	if(ctrlCmdPtr){
+		ctrlCmdPtr->addHandler(HANDLERS::UPDATE_TIMEOUT, [this, ctrlCmdPtr](){
+			updateTimeout(ctrlCmdPtr->getTimeout());
+			Refresh();
+		});
+
+		ctrlCmdPtr->addHandler(HANDLERS::BLOCK_STATIC_BTN, [this](){
+			m_statusBtn->Disable();
+		});
+	}
 }
 
 //--------------------------------------------------------------------
