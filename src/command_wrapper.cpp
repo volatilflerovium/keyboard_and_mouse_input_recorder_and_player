@@ -49,7 +49,6 @@ LoopPanel::LoopPanel(wxWindow* parent, uint posY, uint width, int times)
 	});
 
 	wxBoxSizer* row=new wxBoxSizer(wxHORIZONTAL);
-	//row->SetMinSize(w, 10);
 	row->Add(loopDescription, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
 	row->Add(m_loopInput, 0);
 	
@@ -86,6 +85,7 @@ CloseLoopPanel::CloseLoopPanel(wxWindow* parent, uint posY, uint width)
 }
 
 //====================================================================
+//====================================================================
 
 BEGIN_EVENT_TABLE(CommandPanel, BasePanel)
 	EVT_CHECKBOX(EvtID::ID, CommandPanel::OnCheck)
@@ -98,14 +98,6 @@ END_EVENT_TABLE()
 
 //--------------------------------------------------------------------
 
-CommandPanel::~CommandPanel()
-{
-	delete m_baseCommandPtr;
-	m_baseCommandPtr=nullptr;
-}
-
-//--------------------------------------------------------------------
-
 void CommandPanel::init(bool indentation)
 {
 	m_isIndented=indentation;
@@ -113,16 +105,16 @@ void CommandPanel::init(bool indentation)
 	m_enableCmdCheck=new wxCheckBox(m_handlerPtr, EvtID::ID, wxT(" "),
 					wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT);
 
-	m_enableCmdCheck->SetValue(m_baseCommandPtr->isActive());
+	m_enableCmdCheck->SetValue(getCommand()->isActive());
 
-	wxString description=m_baseCommandPtr->getDescription();
+	wxString description=getCommand()->getDescription();
 	m_description = new WX_TextCtrl(m_handlerPtr, wxID_ANY, description, wxDefaultPosition,
 	                      //wxDefaultSize,//
 	                      wxSize(-1, 23),
 	                      wxNO_BORDER);
 
 	m_description->setCallback([this](const char* val){		
-		m_baseCommandPtr->updateDescription(val);
+		getCommand()->updateDescription(val);
 	});
 
 	setTimeoutCtrl();
@@ -137,7 +129,7 @@ void CommandPanel::init(bool indentation)
 
 void CommandPanel::OnCheckStatus(wxCommandEvent& event)
 {
-	wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(m_baseCommandPtr->getExitCode()));
+	wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(getCommand()->getExitCode()));
 	wxMessageBox(msg);
 }
 
@@ -145,7 +137,7 @@ void CommandPanel::OnCheckStatus(wxCommandEvent& event)
 
 void CommandPanel::enableCommand(bool enable)
 {
-	m_baseCommandPtr->updateActive(enable);
+	getCommand()->updateActive(enable);
 	m_enableCmdCheck->SetValue(enable);
 	if(enable){
 		m_description->Enable();
@@ -159,16 +151,15 @@ void CommandPanel::enableCommand(bool enable)
 
 void CommandPanel::enableStatus()
 {
-	if(m_baseCommandPtr->getExitCode()>0){
+	if(getCommand()->getExitCode()>0){
 		m_statusBtn->Enable();
-		//m_statusBtn->SetLabel(wxT("🗙"));
 		m_statusBtn->SetBackgroundColour(wxColour("#FF0000"));
 	}
 	else{
-		//m_statusBtn->SetLabel(wxT("✓"));
 		m_statusBtn->SetBackgroundColour(wxColour("#49d470"));
 	}
 }
+
 
 //--------------------------------------------------------------------
 
@@ -176,6 +167,8 @@ void CommandPanel::OnCheck(wxCommandEvent& event)
 {	
 	enableCommand(m_enableCmdCheck->GetValue());
 }
+
+//--------------------------------------------------------------------
 
 void CommandPanel::doIndentation(bool indentation)
 {
@@ -185,7 +178,7 @@ void CommandPanel::doIndentation(bool indentation)
 
 		int parentWidth=GetParent()->GetSize().GetWidth();
 
-		m_mainCol->SetMinSize(parentWidth-2*_MARGIN_WIDTH-(c_padding*indentation), 10);
+		m_mainCol->SetMinSize(parentWidth-2*CmdSettingData::MARGIN_WIDTH-(c_padding*indentation), 10);
 
 		auto paddingColNew=new wxBoxSizer(wxHORIZONTAL);
 		paddingColNew->Add(c_padding*indentation, 0, wxALL, 20);
@@ -198,21 +191,38 @@ void CommandPanel::doIndentation(bool indentation)
 
 //====================================================================
 
-wxFloatingPointValidator<float> InputCommandWrapper::s_floatValidator;
-bool InputCommandWrapper::s_isValidatorSet=false;
-
-InputCommandWrapper::InputCommandWrapper(wxWindow* parent, uint posY, uint width, BaseCommand* cmd)
-:CommandPanel(parent, posY, width, cmd)
+static wxFloatingPointValidator<float>& initFloatValidator()
 {
-	if(!s_isValidatorSet){
-		s_isValidatorSet=true;
-		s_floatValidator.SetRange(0, 60*60*2);
-		s_floatValidator.SetPrecision(2);
-	}
+	static wxFloatingPointValidator<float> s_floatValidator;
+	s_floatValidator.SetRange(0, 60*60*2);
+	s_floatValidator.SetPrecision(2);
+	return s_floatValidator;
+}
+
+wxFloatingPointValidator<float>& s_floatValidator=initFloatValidator();
+
+
+InputCommandWrapper::InputCommandWrapper(wxWindow* parent, uint posY, uint width, InputCommand* cmd)
+:CommandPanel(parent, posY, width)
+, m_cmdPtr(cmd)
+{
 }
 
 BEGIN_EVENT_TABLE(InputCommandWrapper, CommandPanel)
 END_EVENT_TABLE()
+
+//--------------------------------------------------------------------
+
+InputCommandWrapper::~InputCommandWrapper()
+{
+	delete m_cmdPtr;
+	m_cmdPtr=nullptr;
+}
+
+BaseCommand* InputCommandWrapper::getCommand()
+{
+	return m_cmdPtr;
+}
 
 //--------------------------------------------------------------------
 
@@ -222,7 +232,7 @@ void InputCommandWrapper::setTimeoutCtrl()
 								wxSize(80, 23), wxNO_BORDER, s_floatValidator);
 
 	m_timeoutInput->setCallback([this](const char* val){
-		m_baseCommandPtr->updateTime(std::atof(val)*1000);
+		m_cmdPtr->updateTime(std::atof(val)*1000);
 	});
 
 	m_timeoutInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
@@ -239,7 +249,7 @@ void InputCommandWrapper::init(bool indentation)
 
 	wxStaticText* paddingTime=new wxStaticText(m_handlerPtr, wxID_ANY, wxT("Wait for (secs): "));
 
-	m_timeoutInput->ChangeValue(wxString::Format(wxT("%.2f"), m_baseCommandPtr->wait()/1000.0));
+	m_timeoutInput->ChangeValue(wxString::Format(wxT("%.2f"), m_cmdPtr->wait()/1000.0));
 
 	//layout
 
@@ -271,9 +281,9 @@ void InputCommandWrapper::init(bool indentation)
 	m_handlerPtr->SetSizerAndFit(m_sizerBody);
 
 	auto sizerVert = new wxBoxSizer(wxHORIZONTAL);
-	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, _TOP_MARGIN_PADDING);
+	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, CmdSettingData::TOP_MARGIN_PADDING);
 	auto sizerHor = new wxBoxSizer(wxHORIZONTAL);
-	sizerHor->Add(sizerVert, 1, wxEXPAND | wxLEFT|wxRIGHT | wxBOTTOM, _MARGIN_WIDTH);
+	sizerHor->Add(sizerVert, 1, wxEXPAND | wxLEFT|wxRIGHT | wxBOTTOM, CmdSettingData::MARGIN_WIDTH);
 	
 	this->SetSizerAndFit(sizerHor);
 	m_height=this->GetMinHeight();
@@ -285,27 +295,118 @@ void InputCommandWrapper::init(bool indentation)
 
 //====================================================================
 
-ControlCommandWrapper::ControlCommandWrapper(wxWindow* parent, uint posY, uint width, BaseCommand* cmd)
-:CommandPanel(parent, posY, width, cmd)
+
+MouseBtnCmdWrapper::MouseBtnCmdWrapper(wxWindow* parent, uint posY, uint width, MouseBtnCommand* cmd)
+:InputCommandWrapper(parent, posY, width, cmd)
+{
+}
+
+BEGIN_EVENT_TABLE(MouseBtnCmdWrapper, InputCommandWrapper)
+END_EVENT_TABLE()
+
+//--------------------------------------------------------------------
+
+void MouseBtnCmdWrapper::init(bool indentation)
+{
+	CommandPanel::init(indentation);
+
+	wxStaticText* paddingTime=new wxStaticText(m_handlerPtr, wxID_ANY, wxT("Wait for (secs): "));
+
+	m_timeoutInput->ChangeValue(wxString::Format(wxT("%.2f"), m_cmdPtr->wait()/1000.0));
+
+	wxStaticText* pressForTxt=new wxStaticText(m_handlerPtr, wxID_ANY, wxT("Press for (ms): "));
+
+	MouseBtnCommand* mouseCmdPtr=dynamic_cast<MouseBtnCommand*>(m_cmdPtr);
+	
+	m_pressForMsInput = new WX_TextCtrl(m_handlerPtr, wxID_ANY, wxT("0"), wxDefaultPosition,
+								wxSize(70, 23), wxNO_BORDER, s_integerValidator);
+
+	m_pressForMsInput->ChangeValue(wxString::Format(wxT("%d"), mouseCmdPtr->getPressFor()));
+
+	m_pressForMsInput->setCallback([mouseCmdPtr](const char* val){
+		mouseCmdPtr->setPressFor(std::atoi(val));
+	});
+
+	m_pressForMsInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
+		wxCommandEvent event2(wxEVT_CUSTOM_EVENT, EvtID::CHANGES_MADE);
+		wxPostEvent(this, event2);
+   });
+
+	//layout
+
+	wxBoxSizer* row1=new wxBoxSizer(wxHORIZONTAL);
+	
+	row1->Add(m_enableCmdCheck, 0, wxALIGN_CENTER_VERTICAL);
+	row1->Add(m_description, 1, wxALIGN_CENTER_VERTICAL);//, wxEXPAND | wxTOP, 50);
+
+	int boxPlaceholder=c_padding+5;
+	wxBoxSizer* row2 = new wxBoxSizer(wxHORIZONTAL);
+	row2->Add(boxPlaceholder, 0);
+	row2->Add(paddingTime, 0);
+	row2->Add(m_timeoutInput, 0);
+
+	row2->Add(pressForTxt, 0, wxLEFT, 20);
+	row2->Add(m_pressForMsInput, 0);
+	row2->AddStretchSpacer();
+	row2->Add(m_statusBtn, 0);
+
+	m_mainCol= new wxBoxSizer(wxVERTICAL);
+	m_mainCol->Add(row1, 1, wxEXPAND);
+	m_mainCol->Add(row2, 0, wxEXPAND | wxTOP, 4);
+
+	m_sizerBody = new wxBoxSizer(wxHORIZONTAL);
+
+	m_paddingCol=new wxBoxSizer(wxHORIZONTAL);
+	m_paddingCol->Add(c_padding*indentation, 0);
+
+	m_sizerBody->Add(m_paddingCol, 0);
+	m_sizerBody->Add(m_mainCol, 1, wxEXPAND);
+
+	m_handlerPtr->SetSizerAndFit(m_sizerBody);
+
+	auto sizerVert = new wxBoxSizer(wxHORIZONTAL);
+	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, CmdSettingData::TOP_MARGIN_PADDING);
+	auto sizerHor = new wxBoxSizer(wxHORIZONTAL);
+	sizerHor->Add(sizerVert, 1, wxEXPAND | wxLEFT|wxRIGHT | wxBOTTOM, CmdSettingData::MARGIN_WIDTH);
+	
+	this->SetSizerAndFit(sizerHor);
+	m_height=this->GetMinHeight();
+
+	int parentWidth=GetParent()->GetSize().GetWidth();
+
+	this->SetSize(parentWidth-10, m_height);
+}
+
+//====================================================================
+
+ControlCommandWrapper::ControlCommandWrapper(wxWindow* parent, uint posY, uint width, CtrlCommand* cmdPtr)
+:CommandPanel(parent, posY, width)
+, m_cmdPtr(cmdPtr)
 , m_imgCtrlViewrPtr(nullptr)
 {
 	Bind(wxEVT_MENU, [this](wxCommandEvent& evnt){
 		wxCommandEvent event(wxEVT_CUSTOM_EVENT, EvtID::EDIT_CTRL_CMD);
-		event.SetClientData(m_baseCommandPtr);
+		event.SetClientData(m_cmdPtr);
 		wxPostEvent(this, event);
 	}, WX::CTRL_CMD_MENU_EDIT);
 
-	auto ctrlCmdPtr=dynamic_cast<CtrlCommand*>(m_baseCommandPtr);
-	if(ctrlCmdPtr){
-		ctrlCmdPtr->addHandler(HANDLERS::UPDATE_TIMEOUT, [this, ctrlCmdPtr](){
-			updateTimeout(ctrlCmdPtr->getTimeout());
-			Refresh();
-		});
+	cmdPtr->addHandler(HANDLERS::UPDATE_TIMEOUT, [this, cmdPtr](){
+		updateTimeout(cmdPtr->getTimeout());
+		Refresh();
+	});
 
-		ctrlCmdPtr->addHandler(HANDLERS::BLOCK_STATIC_BTN, [this](){
-			m_statusBtn->Disable();
-		});
-	}
+	cmdPtr->addHandler(HANDLERS::BLOCK_STATIC_BTN, [this](){
+		m_statusBtn->Disable();
+	});
+	
+}
+
+//--------------------------------------------------------------------
+
+ControlCommandWrapper::~ControlCommandWrapper()
+{
+	delete m_cmdPtr;
+	m_cmdPtr=nullptr;
 }
 
 //--------------------------------------------------------------------
@@ -314,6 +415,13 @@ BEGIN_EVENT_TABLE(ControlCommandWrapper, CommandPanel)
 	EVT_CHECKBOX(EvtID::ID, ControlCommandWrapper::OnCheck)
 	EVT_CONTEXT_MENU(ControlCommandWrapper::OnContextMenu)
 END_EVENT_TABLE()
+
+//--------------------------------------------------------------------
+
+BaseCommand* ControlCommandWrapper::getCommand()
+{
+	return m_cmdPtr;
+}
 
 //--------------------------------------------------------------------
 
@@ -331,21 +439,18 @@ void ControlCommandWrapper::mkContextMenu()
 
 void ControlCommandWrapper::OnCheckStatus(wxCommandEvent& event)
 {
-	if(ExitCode::FAILED<(m_baseCommandPtr->getExitCode()&~1)){
-		wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(m_baseCommandPtr->getExitCode()));
+	if(ExitCode::FAILED<(m_cmdPtr->getExitCode()&~1)){
+		wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(m_cmdPtr->getExitCode()));
 		wxMessageBox(msg);
 	}
 	else{
-		CtrlCommand* ctrlCmdPtr=dynamic_cast<CtrlCommand*>(m_baseCommandPtr);
-		if(ctrlCmdPtr){
-			if(!m_imgCtrlViewrPtr){
-				m_imgCtrlViewrPtr=new ResultPopup(this, "Image for Ctrl Command", ctrlCmdPtr->getBaseImg());
-			}
-			else{
-				m_imgCtrlViewrPtr->loadBaseImg(ctrlCmdPtr->getBaseImg());
-			}
-			m_imgCtrlViewrPtr->Popup();
+		if(!m_imgCtrlViewrPtr){
+			m_imgCtrlViewrPtr=new ResultPopup(this, "Image for Ctrl Command", m_cmdPtr->getBaseImg());
 		}
+		else{
+			m_imgCtrlViewrPtr->loadBaseImg(m_cmdPtr->getBaseImg());
+		}
+		m_imgCtrlViewrPtr->Popup();
 	}
 }
 
@@ -357,7 +462,7 @@ void ControlCommandWrapper::setTimeoutCtrl()
 								wxSize(80, 23), wxNO_BORDER, s_integerValidator);
 
 	m_timeoutInput->setCallback([this](const char* val){
-		m_baseCommandPtr->updateTime(std::atoi(val));
+		m_cmdPtr->updateTime(std::atoi(val));
 	});
 
 	m_timeoutInput->Bind(wxEVT_TEXT, [this](wxCommandEvent& event) {
@@ -374,9 +479,7 @@ void ControlCommandWrapper::init(bool indentation)
 
 	wxStaticText* timeoutText=new wxStaticText(m_handlerPtr, wxID_ANY, wxT("Timeout (secs): "));
 
-	CtrlCommand* ctrlCmdPtr=dynamic_cast<CtrlCommand*>(m_baseCommandPtr);
-
-	updateTimeout(ctrlCmdPtr->getTimeout());
+	updateTimeout(m_cmdPtr->getTimeout());
 
 	// Layout
 
@@ -407,9 +510,9 @@ void ControlCommandWrapper::init(bool indentation)
 	m_handlerPtr->SetSizerAndFit(m_sizerBody);
 	
 	auto sizerVert = new wxBoxSizer(wxHORIZONTAL);
-	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, _TOP_MARGIN_PADDING);
+	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, CmdSettingData::TOP_MARGIN_PADDING);
 	auto sizerHor = new wxBoxSizer(wxHORIZONTAL);
-	sizerHor->Add(sizerVert, 1, wxEXPAND | wxLEFT |wxRIGHT | wxBOTTOM, _MARGIN_WIDTH);
+	sizerHor->Add(sizerVert, 1, wxEXPAND | wxLEFT |wxRIGHT | wxBOTTOM, CmdSettingData::MARGIN_WIDTH);
 	
 	this->SetSizerAndFit(sizerHor);
 	m_height=this->GetMinHeight();

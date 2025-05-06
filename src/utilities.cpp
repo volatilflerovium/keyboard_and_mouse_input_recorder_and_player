@@ -25,8 +25,6 @@
 * bool wxTakeScreenshot(const int, const char*, const char*, bool manual);
 * bool isRGB(const char*);                                           *
 * bool isHex(const char*);                                           *
-* template<typename T> struct ToString                               *
-* template<typename T, typename... Args> std::string ToString2(T , Args...)
 *         	                                                         *
 * Version: 1.0                                                       *
 * Date:    09-02-2025                                                *
@@ -39,11 +37,14 @@
 #include <wx/display.h>
 #include <wx/utils.h> 
 #include <wx/dc.h>
+#include <wx/choice.h>
 
 #include <ctime>
 #include <iterator>
 #include <locale>
 #include <filesystem>
+
+#include <fstream>
 
 wxColour s_colour(*wxBLUE);
 
@@ -435,6 +436,63 @@ bool isHex(const char* str)
 	}
 
 	return true;
+}
+
+//====================================================================
+
+void removeOrphanImgs(wxChoice* fileDropDown)
+{
+	std::vector<std::pair<std::string, bool> > imgVector;
+
+	std::error_code ec;
+	std::string imageFile;
+	std::filesystem::directory_iterator dirIterator(getImgPath(), ec);
+	if(ec.value()==0){
+		for(auto& dirEntry : dirIterator){
+			if(dirEntry.is_regular_file()){
+				imageFile=dirEntry.path().filename().c_str();
+				if(imageFile[0]!='.'){
+					imgVector.push_back({imageFile.c_str(), false});
+				}
+			}
+		}
+	}
+	
+	std::string pattern=".png";
+	pattern.append(SEPARATOR);
+
+	wxString fileName;
+
+	for(unsigned int i=0; i<fileDropDown->GetCount(); i++){
+		fileName=fileDropDown->GetString(i);
+		std::ifstream commandFiles;
+		
+		commandFiles.open(getFilePath(fileName.mb_str()), std::ifstream::in);
+		if(commandFiles.is_open()){
+			std::string commandStr;
+			std::string img;
+			while(std::getline(commandFiles, commandStr)){
+				size_t pos=commandStr.find(pattern);
+				if(pos!=std::string::npos){
+					SimpleUnserialization<20> cmdData(commandStr.c_str(), SEPARATOR);					
+					const char* imageName=cmdData.get<const char*>("baseImageName");
+					for(auto& data : imgVector){
+						if(data.first==imageName){
+							data.second=true;
+							break;
+						}
+					}
+				}
+			}
+			commandFiles.close();
+		}
+	}
+
+	for(auto& data : imgVector){
+		if(!data.second){
+			removeImage(data.first);
+		}
+	}
 }
 
 //====================================================================

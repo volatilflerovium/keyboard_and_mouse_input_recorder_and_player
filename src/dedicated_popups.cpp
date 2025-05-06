@@ -25,7 +25,6 @@
 #include "enumerations.h"
 #include "wx_textctrl.h"
 #include "wxstring_array.h"
-
 #include "file_scrolled_window.h"
 
 #include <wx/valnum.h>
@@ -392,6 +391,7 @@ void EditCtrlCmdPopup::OnUpdateCmd(wxCommandEvent& event)
 		m_swapScreenshotRadio->SetSelection(USE_ROI::OLD);
 		m_swapScreenshotRadio->Disable();
 		m_imgName="";
+		m_ctrlCmdPtr->fireEvent(HANDLERS::BLOCK_STATIC_BTN);
 	}
 
 	m_ctrlCmdPtr->updateTime(m_timeoutInput->GetValue());
@@ -401,9 +401,7 @@ void EditCtrlCmdPopup::OnUpdateCmd(wxCommandEvent& event)
 
 	m_ctrlCmdPtr->setRestriction(m_strictRunCheck->GetValue());
 
-	wxCommandEvent updateViewEvent(wxEVT_CUSTOM_EVENT, EvtID::UPDATE_CMD_VIEW);
-	updateViewEvent.SetClientData(m_ctrlCmdPtr);
-	wxPostEvent(this, updateViewEvent);
+	m_ctrlCmdPtr->fireEvent(HANDLERS::UPDATE_TIMEOUT);
 
 	m_ctrlCmdPtr=nullptr;
 	Dismiss();
@@ -541,10 +539,12 @@ ResultPopup::ResultPopup(wxWindow* parent, const char* title, const std::string&
 
 	setOnClose([this](){
 		m_swapScreenshotRadio->SetSelection(0);
+		m_previewPanel->loadBackground(getImgPath(m_baseImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
 	});
 
 	setOnDismissCallback([this](wxWindow*){
 		m_swapScreenshotRadio->SetSelection(0);
+		m_previewPanel->loadBackground(getImgPath(m_baseImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
 	});
 
 	Bind(wxEVT_RADIOBOX, [this](wxCommandEvent& evnt){		

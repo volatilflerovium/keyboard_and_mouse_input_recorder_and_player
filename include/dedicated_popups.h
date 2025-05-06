@@ -20,7 +20,6 @@
 #define _DEDICATED_POPUP_H
 
 #include "extended_popup.h"
-#include "utilities.h"
 
 #include <wx/wx.h>
 #include <string>

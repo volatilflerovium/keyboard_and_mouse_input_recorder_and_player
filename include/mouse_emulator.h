@@ -39,8 +39,8 @@ class MouseEmulatorI : public ErrorReporting
 
 		virtual bool reload();
 
-		void clickLeftBtn();
-		void clickRightBtn();
+		void clickLeftBtn(uint pressForMs=0);
+		void clickRightBtn(uint pressForMs=0);
 
 		/*
 		 *	Move mouse to the relative position (dy, dy) in small steps

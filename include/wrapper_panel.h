@@ -60,8 +60,27 @@ class BaseWrapperPanel<W, true> : public W
 //====================================================================
 //====================================================================
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL=wxPanel>
-class WrapperPanel : public BaseWrapperPanel<WXPANEL>
+struct SettingData
+{
+	static constexpr int TOP_MARGIN_PADDING=10;
+	static constexpr int MARGIN_WIDTH=5;
+	static constexpr int WX_ID=5;
+};
+
+//----------------------------------------------------------------------
+
+template<typename Data, bool = std::is_base_of<SettingData, Data>::value>
+class WrapperSettings
+{};
+
+template<typename Data>
+class WrapperSettings<Data, true> : public Data
+{};
+
+//====================================================================
+
+template<typename Data, typename WXPANEL=wxPanel>
+class WrapperPanel : public BaseWrapperPanel<WXPANEL>, public WrapperSettings<Data>
 {
 	public:
 		WrapperPanel(wxWindow* parent, uint posY, uint width);
@@ -79,8 +98,6 @@ class WrapperPanel : public BaseWrapperPanel<WXPANEL>
 		}
 
 	protected:
-		static constexpr int _TOP_MARGIN_PADDING=M;
-		static constexpr int _MARGIN_WIDTH=N;
 		static WrapperPanel* s_lastSelected;
 		wxPanel* m_handlerPtr;
 		bool m_isSelected{false};
@@ -109,21 +126,21 @@ class WrapperPanel : public BaseWrapperPanel<WXPANEL>
 
 //====================================================================
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-WrapperPanel<T, M, N, WX_ID, WXPANEL>* WrapperPanel<T, M, N, WX_ID, WXPANEL>::s_lastSelected=nullptr;
+template<typename Data, typename WXPANEL>
+WrapperPanel<Data, WXPANEL>* WrapperPanel<Data, WXPANEL>::s_lastSelected=nullptr;
 
 //--------------------------------------------------------------------
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-WrapperPanel<T, M, N, WX_ID, WXPANEL>::WrapperPanel(wxWindow* parent, uint posY, uint width)
+template<typename Data, typename WXPANEL>
+WrapperPanel<Data, WXPANEL>::WrapperPanel(wxWindow* parent, uint posY, uint width)
 :BaseWrapperPanel<WXPANEL>(parent, posY, width)
 {
 	setBackgroundColour(this, wxColour("#FFFFFF"));
 
 	m_handlerPtr = new wxPanel(this,
 		wxID_ANY,
-		wxPoint(_MARGIN_WIDTH, _TOP_MARGIN_PADDING),
-		wxSize(width-2*_MARGIN_WIDTH, -1)	
+		wxPoint(Data::MARGIN_WIDTH, Data::TOP_MARGIN_PADDING),
+		wxSize(width-2*Data::MARGIN_WIDTH, -1)	
 	);
 
 	binding(this, wxEVT_ENTER_WINDOW, [this](wxMouseEvent&){
@@ -143,26 +160,26 @@ WrapperPanel<T, M, N, WX_ID, WXPANEL>::WrapperPanel(wxWindow* parent, uint posY,
 		setBackgroundColour(this, wxColour("#ffffff"));
 	});
 
-	m_handlerPtr->SetMinSize(wxSize(width-2*_MARGIN_WIDTH, -1));
+	m_handlerPtr->SetMinSize(wxSize(width-2*Data::MARGIN_WIDTH, -1));
 
 	m_handlerPtr->SetBackgroundColour(wxColour("#FFFFFF"));
 }
 
 //--------------------------------------------------------------------
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-void WrapperPanel<T, M, N, WX_ID, WXPANEL>::mkContextMenu()
+template<typename Data, typename WXPANEL>
+void WrapperPanel<Data, WXPANEL>::mkContextMenu()
 {
 	if(m_isSelected){
 		wxMenu menu;
-		menu.Append(WX_ID, wxT("Delete"));
+		menu.Append(Data::WX_ID, wxT("Delete"));
 		popupMenu(this, &menu);
 	}
 }
 //--------------------------------------------------------------------
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-void WrapperPanel<T, M, N, WX_ID, WXPANEL>::setSelected()
+template<typename Data, typename WXPANEL>
+void WrapperPanel<Data, WXPANEL>::setSelected()
 {
 	if(s_lastSelected){
 		s_lastSelected->m_isSelected=false;
@@ -181,16 +198,16 @@ void WrapperPanel<T, M, N, WX_ID, WXPANEL>::setSelected()
 
 //--------------------------------------------------------------------
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-void WrapperPanel<T, M, N, WX_ID, WXPANEL>::MouseLeftBtnDown(wxMouseEvent& event)
+template<typename Data, typename WXPANEL>
+void WrapperPanel<Data, WXPANEL>::MouseLeftBtnDown(wxMouseEvent& event)
 {
 	setSelected();
 }
 
 //--------------------------------------------------------------------
 
-template<typename T, int M, int N, int WX_ID, typename WXPANEL>
-void WrapperPanel<T, M, N, WX_ID, WXPANEL>::OnContextMenu(wxContextMenuEvent& event)
+template<typename Data, typename WXPANEL>
+void WrapperPanel<Data, WXPANEL>::OnContextMenu(wxContextMenuEvent& event)
 {
 	if(!m_isSelected){
 		setSelected();

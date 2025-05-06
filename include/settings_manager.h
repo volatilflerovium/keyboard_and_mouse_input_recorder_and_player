@@ -16,9 +16,7 @@
 #ifndef _SETTINGS_MANAGER_H
 #define _SETTINGS_MANAGER_H
 
-#include "utilities.h"
 #include "cstr_split.h"
-
 #include "hid_manager.h"
 #include "enumerations.h"
 

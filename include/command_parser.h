@@ -18,9 +18,7 @@
 #ifndef COMMAND_PARSER_H
 #define COMMAND_PARSER_H
 
-#include "keyboard_emulator.h"
 #include "input_command.h"
-#include "hid_manager.h"
 
 //====================================================================
 
@@ -29,16 +27,18 @@ struct CmdType2Bdr
 {
 	typedef MouseSelectCommand Cmd;
 };
-/*
-template<>
-struct CmdType2Bdr<CommandTypes::Ctrl>
-{
-};
 
+/*
 template<>
 struct CmdType2Bdr<CommandTypes::Screenshot>
 {
 };//*/
+
+template<>
+struct CmdType2Bdr<CommandTypes::Ctrl>
+{
+	typedef CtrlCommand Cmd;
+};
 
 template<>
 struct CmdType2Bdr<CommandTypes::Keyboard>
@@ -103,21 +103,9 @@ struct CmdType2Bdr<CommandTypes::MouseDrag>
 
 //====================================================================
 
-template<CommandTypes CMDT>
-struct CmdBuilder
-{
-	typedef typename CmdType2Bdr<CMDT>::Cmd CMD;
-	template<typename... Args>
-	static InputCommand* Builder(bool run, Args... args)
-	{
-		InputCommand* ptr=new CMD(args...);
-		ptr->updateActive(run);
-		return ptr;
-	}
-};
+class CmdScrolledWindow;
 
-
-BaseCommand* ParserBuilder(const std::string& line);
+void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, const std::string& commandStr);
 
 //====================================================================
 

@@ -28,7 +28,7 @@ extern wxTextValidator s_fileValidator;
 //====================================================================
 
 FilePanel::FilePanel(wxWindow* parent, uint posY, uint width, const char* fileName, bool disable)
-:WrapperPanel<FilePanel, 10, 2, WX::DELETE_FILE>(parent, posY, width)
+:WrapperPanel<FileSettingData>(parent, posY, width)
 , m_fileName(fileName)
 {
 	init(disable);
@@ -92,9 +92,9 @@ void FilePanel::init(bool disable)
 	m_handlerPtr->SetSizerAndFit(sizerBody);
 
 	auto sizerVert = new wxBoxSizer(wxVERTICAL);
-	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, _TOP_MARGIN_PADDING);
+	sizerVert->Add(m_handlerPtr, 1, wxEXPAND | wxTOP, FileSettingData::TOP_MARGIN_PADDING);
 	auto sizerHor = new wxBoxSizer(wxHORIZONTAL);
-	sizerHor->Add(sizerVert, 0, wxLEFT|wxBOTTOM, _MARGIN_WIDTH);
+	sizerHor->Add(sizerVert, 0, wxLEFT|wxBOTTOM, FileSettingData::MARGIN_WIDTH);
 	
 	this->SetSizerAndFit(sizerHor);
 	m_height=this->GetMinHeight();

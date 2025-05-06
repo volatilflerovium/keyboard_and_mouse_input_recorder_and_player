@@ -25,9 +25,14 @@
 
 //====================================================================
 
+struct FileSettingData : public SettingData
+{
+	static constexpr int WX_ID=WX::DELETE_FILE;
+};
+
 class WX_TextCtrl;
 
-class FilePanel : public WrapperPanel<FilePanel, 10, 2, WX::DELETE_FILE>
+class FilePanel : public WrapperPanel<FileSettingData>
 {
 	public:
 		FilePanel(wxWindow* parent, uint posY, uint width, const char* fileName, bool disable);

@@ -10,8 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Threads REQUIRED)
 
 #--------------------------------------------------------------------- 
-## Please set your wxWidgets configuration here
-#--------------------------------------------------------------------- 
+## wxWidgets configuration
+#---------------------------------------------------------------------
+
 if(DEFINED "ENV{WXWIDGETS_PATH}")
 	find_package(wxWidgets REQUIRED 
 		PATHS "$ENV{WXWIDGETS_PATH}" NO_DEFAULT_PATH
@@ -67,7 +68,8 @@ add_subdirectory("${TINYUSB_LINK_DIR}")
 
 set(App kmRecPlayerApp)
 
-set(SOURCES1
+add_executable(
+	"${App}"
 	src/main.cpp
 	src/km_recorder_player.cpp
 	src/error_reporting.cpp
@@ -81,12 +83,13 @@ set(SOURCES1
 	src/input_command.cpp
 	src/image_panel.cpp
 	src/command_parser.cpp
-	src/ext_scrolled_window.cpp
+	src/cmd_scrolled_window.cpp
 	src/command_wrapper.cpp
 	src/event_definitions.cpp
 	src/wx_textctrl.cpp
 	src/extended_popup.cpp
 	src/utilities.cpp
+#	src/screenshot_worker.cpp
 	src/file_scrolled_window.cpp
 	src/dedicated_popups.cpp
 	src/inputblocker.cpp
@@ -96,11 +99,6 @@ set(SOURCES1
 	src/progress_bar.cpp
 	src/wx_worker.cpp
 	src/light_image_panel.cpp
-)
-
-add_executable(
-	"${App}"
-	${SOURCES1}
 )
 
 target_link_libraries(
@@ -114,8 +112,8 @@ target_link_libraries(
 
 target_include_directories(
 	"${App}"
-	#PRIVATE
-	PUBLIC
+	PRIVATE
+	#PUBLIC
 	"include"
 	"${IMG_DIFF_LIB_DIR}/include"
 	"${TINYUSB_LINK_DIR}/include"

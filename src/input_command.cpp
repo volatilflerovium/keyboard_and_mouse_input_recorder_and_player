@@ -29,12 +29,19 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "input_command.h"
-#include "hid_manager.h"
 #include "ImageDiff_Lib/simple_image_difference.h"
-#include "utilities.h"
+#include "cstr_split.h"
+#include "keyboard_emulator.h"
+#include "mouse_emulator.h"
+
 #include "debug_utils.h"
 
 #include <wx/wx.h>
+
+//====================================================================
+
+extern MouseEmulatorI* s_MouseEmulator;
+extern KeyboardEmulatorI* s_KeyboardEmulator;
 
 int MouseCmdExitPosition::s_x=0;
 int MouseCmdExitPosition::s_y=0;
@@ -124,12 +131,23 @@ TextCommand::TextCommand(const char* description, int wait, const std::string& t
 	m_cmd=[this](){
 		s_KeyboardEmulator->inputText(m_text.c_str());
 	};
+}
 
+//--------------------------------------------------------------------
+
+void TextCommand::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::KeyboardText);
-
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_text);
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"text", m_text,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
 }
 
 //====================================================================
@@ -141,12 +159,25 @@ LineCommand::LineCommand(const char* description, int wait, const std::string& l
 	m_cmd=[this](){
 		s_KeyboardEmulator->inputLine(m_line.c_str());
 	};
+}
 
+//--------------------------------------------------------------------
+
+void LineCommand::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::KeyboardLine);
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_line);
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"line", m_line,
+		"wait", m_wait
+		);
+
+	json.dump(outputStream);
 }
 
 //====================================================================
@@ -158,12 +189,25 @@ KeyCommad::KeyCommad(const char* description, int wait, SPKEYS keyCode)
 	m_cmd=[this](){
 		s_KeyboardEmulator->commandKey(m_keyCode);
 	};
+}
 
+//--------------------------------------------------------------------
+
+void KeyCommad::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::Keyboard);
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, int(m_keyCode));
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"keycode", int(m_keyCode),
+		"wait", m_wait
+		);
+
+	json.dump(outputStream);
 }
 
 //====================================================================
@@ -175,12 +219,25 @@ UnicodeCommand::UnicodeCommand(const char* description, int wait, const std::str
 	m_cmd=[this](){
 		s_KeyboardEmulator->unicodeCharacter(m_codePoint.c_str());
 	};
+}
 
+//--------------------------------------------------------------------
+
+void UnicodeCommand::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::Unicode);
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_codePoint);
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"codePoint", m_codePoint,
+		"wait", m_wait
+		);
+
+	json.dump(outputStream);
 }
 
 //====================================================================
@@ -193,13 +250,24 @@ ShortcutCommand::ShortcutCommand(const char* description, int wait, const std::s
 	m_cmd=[shortcutObj](){
 		s_KeyboardEmulator->shortcut(shortcutObj);
 	};
-	
+}
 
+//--------------------------------------------------------------------
+
+void ShortcutCommand::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::Shortcut);
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_shortcut);
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"shortcut", m_shortcut,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
 }
 
 //--------------------------------------------------------------------
@@ -231,21 +299,43 @@ MoveMouseCommand::MoveMouseCommand(const char* description, int wait, int x, int
 			}
 		}
 	};
+}
 
+//--------------------------------------------------------------------
+
+void MoveMouseCommand::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::MouseMove);
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_x, m_y, m_windowName);
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"x", m_x,
+		"y", m_y,
+		"windowName", m_windowName,
+		"wait", m_wait
+		);
+
+	json.dump(outputStream);
 }
 
 //====================================================================
 
-MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
+MouseBtnCommand::MouseBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_x(x)
 , m_y(y)
+, m_pressForMs(0)
+{};
+
+//====================================================================
+
+MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
+:MouseBtnCommand(description, wait, x, y, windowName)
 {
 	m_cmd=[this](){
 		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
@@ -259,26 +349,37 @@ MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int 
 					pY=mousePosition.y;
 				});
 
-				s_MouseEmulator->clickLeftBtn();
+				s_MouseEmulator->clickLeftBtn(m_pressForMs);
 			}
 		}
 		MouseCmdExitPosition::setExitPosition();
 	};
+}
 
-	int ID=static_cast<int>(CommandTypes::MouseLeftBtn);
+//--------------------------------------------------------------------
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_x, m_y, m_windowName);
-	};
+void MouseLeftBtnCommand::print(std::ostream& outputStream)
+{
+	int ID=static_cast<int>(CommandTypes::MouseLeftBtn);		
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"x", m_x,
+		"y", m_y,
+		"pressFor", m_pressForMs, 
+		"windowName", m_windowName,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
 }
 
 //====================================================================
 
 MouseRightBtnCommand::MouseRightBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
-:InputCommand(description, wait)
-, WindowOffset(windowName)
-, m_x(x)
-, m_y(y)
+:MouseBtnCommand(description, wait, x, y, windowName)
 {
 	m_cmd=[this](){
 		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
@@ -292,21 +393,35 @@ MouseRightBtnCommand::MouseRightBtnCommand(const char* description, int wait, in
 					pY=mousePosition.y;
 				});
 
-				s_MouseEmulator->clickRightBtn();
+				s_MouseEmulator->clickRightBtn(m_pressForMs);
 			}
 		}
 		MouseCmdExitPosition::setExitPosition();
 	};
+}
 
+//--------------------------------------------------------------------
+
+void MouseRightBtnCommand::print(std::ostream& outputStream)
+{
 	int ID=static_cast<int>(CommandTypes::MouseRightBtn);
-
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_x, m_y, m_windowName);
-	};
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"x", m_x,
+		"y", m_y,
+		"pressFor", m_pressForMs, 
+		"windowName", m_windowName,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
 }
 
 //====================================================================
-//*
+
 MouseSelectCommand::MouseSelectCommand(const char* description, int wait, uint posX, uint posY, int width, int height, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
@@ -331,11 +446,27 @@ MouseSelectCommand::MouseSelectCommand(const char* description, int wait, uint p
 		MouseCmdExitPosition::setExitPosition();
 	};
 
-	int ID=static_cast<int>(CommandTypes::MouseSelection);
+}
 
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_posX, m_posY, m_width, m_height, m_windowName);
-	};
+//--------------------------------------------------------------------
+
+void MouseSelectCommand::print(std::ostream& outputStream)
+{
+	int ID=static_cast<int>(CommandTypes::MouseSelection);
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"posX", m_posX,
+		"posY", m_posY,
+		"width", m_width,
+		"height", m_height,
+		"windowName", m_windowName,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
 }
 
 //====================================================================
@@ -369,12 +500,6 @@ MouseDragCommand::MouseDragCommand(const char* description, int wait, int startX
 			}
 		}
 		MouseCmdExitPosition::setExitPosition();
-	};
-
-	int ID=static_cast<int>(CommandTypes::MouseDrag);
-
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, m_startX, m_startY, m_endX, m_endY, m_windowName);
 	};
 }
 
@@ -413,13 +538,51 @@ MouseDragCommand::MouseDragCommand(const char* description, int wait, int endX, 
 		MouseCmdExitPosition::setExitPosition();
 	};
 
-	int ID=static_cast<int>(CommandTypes::MouseDrag);
-
-	m_strCmd=[this, ID](){
-		return ToString2(ID, m_description, m_run, -1, -1, m_endX, m_endY, m_windowName);
-	};
 }
 
+//--------------------------------------------------------------------
+
+void MouseDragCommand::print(std::ostream& outputStream)
+{
+	int ID=static_cast<int>(CommandTypes::MouseDrag);
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"startX", m_startX,
+		"startY", m_startY,
+		"endX", m_endX,
+		"endY", m_endY,
+		"wait", m_wait,
+		"windowName", m_windowName,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
+}
+
+/*
+void MouseDragCommand::print(std::ostream& outputStream)
+{
+		//return ToString2(ID, m_description, m_run, -1, -1, m_endX, m_endY, m_windowName);
+	int ID=static_cast<int>(CommandTypes::MouseDrag);
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", ID,
+		"description", m_description,
+		"run", m_run,
+		"startX", -1,
+		"startY", -1,
+		"endX", m_endX,
+		"endY", m_endY,
+		"windowName", m_windowName,
+		"wait", m_wait
+		);
+	json.dump(outputStream);
+}
+// */
 //====================================================================
 
 CtrlCommand::CtrlCommand(const char* description, const std::string& baseImageName, const char* roiStr, const char* windowName, bool removeImg)
@@ -539,6 +702,44 @@ bool CtrlCommand::ready()
 	}
 
 	return result;
+}
+
+//--------------------------------------------------------------------
+
+void CtrlCommand::print(std::ostream& outputStream)
+{
+	m_cleanImg=false;
+	/*outputStream<<ToString2(
+		static_cast<int>(CommandTypes::Ctrl),
+		m_description,
+		m_run,
+		m_baseImageName,
+		m_roiStr,
+		m_windowName,
+		m_similarity,
+		m_threshold,
+		m_sensitivity,
+		m_strictRun,
+		getTimeout()
+	);*/
+
+	SimpleSerialization json;
+	
+	json.ToString(
+		"ID", static_cast<int>(CommandTypes::Ctrl),
+		"description", m_description,
+		"run", m_run,
+		"baseImageName", m_baseImageName,
+		"roiStr", m_roiStr,
+		"windowName", m_windowName,
+		"similarity", m_similarity,
+		"threshold", m_threshold,
+		"sensitivity", m_sensitivity,
+		"strictRun", m_strictRun,
+		"timeout", getTimeout() // wait
+		);
+
+	json.dump(outputStream);
 }
 
 //--------------------------------------------------------------------

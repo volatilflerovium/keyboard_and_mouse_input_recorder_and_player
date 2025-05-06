@@ -36,8 +36,8 @@ This is done via internal image comparism.
 
 Potential applications could be:
 - automatic GUI testing: when developing a GUI, one has to click buttons 
-  and input text. We could use kmRecorderAndPlayer to automate these inputs
-  and compare the result with a master screenshot.
+  and input text to check visually for the stability of the GUI.
+  We could use kmRecorderAndPlayer to automate these inputs (see [Examples](#examples)).
 - Interacting with websites: despite lot of plug-in and script off the shelf
   to automatize interacting with a website, it is true that websites are
   increasingly blocking interaction with these automatic tools. 
@@ -67,6 +67,7 @@ the following dependencies:
 - Ability to use [TinyUSB](https://docs.TinyUSB.org/en/latest/index.html) as a proxy HID
   device.
 - Time padding: delay execution of commands.
+- Commandline: when call as command line kmRecorderAndPlayer accepts a recording file name as argument.
 
 ## AppImage
 
@@ -88,7 +89,8 @@ kmRecorderAndPlayer:
 - [Startup](https://odysee.com/@volatilflerovium:3/Quick_start_setup:c)
 - [Claudflare turnstile](https://odysee.com/@volatilflerovium:3/captchat_example:f)
 - [Image comparison tool](https://odysee.com/@volatilflerovium:3/image_comparison_tool_example:7)
-- [GUI testing](https://odysee.com/@volatilflerovium:3/testing_gui:6)
+- [GUI testing 1](https://odysee.com/@volatilflerovium:3/testing_gui:6)
+- [GUI testing 2](https://odysee.com/@volatilflerovium:3/3D_Puzzles_GUI_Test:9)
 - [Another GUI testing](https://odysee.com/@volatilflerovium:3/GUI_testing:4)
 - [Download images](https://odysee.com/@volatilflerovium:3/download_imgs:c)
 
@@ -136,6 +138,14 @@ chmod 720 /dev/uinput
 Permission 720 should be enough, but in some cases you will need to set 777. 
 Remember **_these permissions are not permanent, they will be revoke at reboot_**.
 Alternatively you can use a device rule file.
+
+Using Device rule file:
+
+Create a new group ("uinput_group_users"), add your user name to that group and set a file
+in /etc/udev/rules.d/ with the content:
+```
+KERNEL=="uinput", MODE="0720", GROUP="uinput_group_users", OPTIONS+="static_node=uinput"
+```
 
 ### vm
 

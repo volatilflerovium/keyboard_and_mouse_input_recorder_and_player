@@ -14,9 +14,9 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "settings_manager.h"
+#include "utilities.h"
 
 #include <filesystem>
-
 #include <wx/brush.h>
 
 extern wxColour s_colour;

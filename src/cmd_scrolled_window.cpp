@@ -7,13 +7,13 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE. 
 * 
-* ExtScrolledWindow class                          				      *
+* CmdScrolledWindow class                          				      *
 *                                                                    *
 * Version: 1.0                                                       *
 * Date:    28-10-2024                                                *
 * Author:  Dan Machado                                               *
 **********************************************************************/
-#include "ext_scrolled_window.h"
+#include "cmd_scrolled_window.h"
 
 #include "event_definitions.h"
 #include "command_wrapper.h"
@@ -28,7 +28,7 @@
 
 //====================================================================
 
-ExtScrolledWindow::ExtScrolledWindow(wxWindow* parent, int Id, wxPoint Point, wxSize wSize)
+CmdScrolledWindow::CmdScrolledWindow(wxWindow* parent, int Id, wxPoint Point, wxSize wSize)
 :wxScrolledWindow(parent, Id, Point, wSize)
 , m_previousPanel(nullptr)
 , m_width(wSize.GetWidth())
@@ -42,7 +42,7 @@ ExtScrolledWindow::ExtScrolledWindow(wxWindow* parent, int Id, wxPoint Point, wx
 
 //--------------------------------------------------------------------
 
-ExtScrolledWindow::~ExtScrolledWindow()
+CmdScrolledWindow::~CmdScrolledWindow()
 {
 	for(BasePanel* panelPtr : m_cmdViewList){
 		wxDELETE(panelPtr);
@@ -51,13 +51,13 @@ ExtScrolledWindow::~ExtScrolledWindow()
 
 //--------------------------------------------------------------------
 
-BEGIN_EVENT_TABLE(ExtScrolledWindow, wxScrolledWindow)
-	EVT_MENU(WX::DELETE_CMD, ExtScrolledWindow::DeleteCmd)
+BEGIN_EVENT_TABLE(CmdScrolledWindow, wxScrolledWindow)
+	EVT_MENU(WX::DELETE_CMD, CmdScrolledWindow::DeleteCmd)
 END_EVENT_TABLE()
 
 //--------------------------------------------------------------------
 
-void ExtScrolledWindow::DeleteCmd(wxCommandEvent& event)
+void CmdScrolledWindow::DeleteCmd(wxCommandEvent& event)
 {
 	wxMessageDialog confirm(
 		this,
@@ -119,7 +119,7 @@ void ExtScrolledWindow::DeleteCmd(wxCommandEvent& event)
 
 //--------------------------------------------------------------------
 
-void ExtScrolledWindow::updateScroll(int height)
+void CmdScrolledWindow::updateScroll(int height)
 {
 	m_height+=height;
 
@@ -132,7 +132,7 @@ void ExtScrolledWindow::updateScroll(int height)
 
 //--------------------------------------------------------------------
 
-void ExtScrolledWindow::addLoop(int times)
+void CmdScrolledWindow::addLoop(int times)
 {
 	Scroll(0, 0);
 	LoopPanel* loop=new LoopPanel(this, m_height, m_width, times);
@@ -143,7 +143,7 @@ void ExtScrolledWindow::addLoop(int times)
 
 //--------------------------------------------------------------------
 
-void ExtScrolledWindow::closeLoop()
+void CmdScrolledWindow::closeLoop()
 {
 	int length=m_cmdViewList.size()-m_loopStartAt;
 	if(length>0 && m_loopStartAt>-1){
@@ -160,7 +160,7 @@ void ExtScrolledWindow::closeLoop()
 
 //----------------------------------------------------------------------
 
-void ExtScrolledWindow::selectAll()
+void CmdScrolledWindow::selectAll()
 {
 	for(BasePanel* panelPtr : m_cmdViewList){
 		panelPtr->enableCommand(true);
@@ -169,7 +169,7 @@ void ExtScrolledWindow::selectAll()
 
 //----------------------------------------------------------------------
 
-void ExtScrolledWindow::invert()
+void CmdScrolledWindow::invert()
 {
 	for(BasePanel* panelPtr : m_cmdViewList){
 		panelPtr->enableCommand(!panelPtr->isEnabled());
@@ -178,7 +178,7 @@ void ExtScrolledWindow::invert()
 
 //----------------------------------------------------------------------
 
-void ExtScrolledWindow::removeLast()
+void CmdScrolledWindow::removeLast()
 {
 	BasePanel* basePanelPtr=nullptr;
 	if(m_cmdViewList.size()>0){
@@ -196,7 +196,7 @@ void ExtScrolledWindow::removeLast()
 
 //----------------------------------------------------------------------
 
-void ExtScrolledWindow::clear()
+void CmdScrolledWindow::clear()
 {
 	m_height=0;
 	for(BasePanel* panelPtr : m_cmdViewList){
@@ -214,7 +214,7 @@ void ExtScrolledWindow::clear()
 
 //----------------------------------------------------------------------
 
-bool ExtScrolledWindow::getCmd(BaseCommand*& cmdPtr)
+bool CmdScrolledWindow::getCmd(BaseCommand*& cmdPtr)
 {
 	static int times=0;
 	static typename std::list<BasePanel*>::iterator it;
@@ -261,7 +261,7 @@ bool ExtScrolledWindow::getCmd(BaseCommand*& cmdPtr)
 
 //--------------------------------------------------------------------
 
-void ExtScrolledWindow::lastCommandFailed()
+void CmdScrolledWindow::lastCommandFailed()
 {
 	if(m_previousPanel){
 		m_previousPanel->enableStatus();
@@ -270,7 +270,7 @@ void ExtScrolledWindow::lastCommandFailed()
 
 //----------------------------------------------------------------------
 
-void ExtScrolledWindow::reset()
+void CmdScrolledWindow::reset()
 {
 	m_init=false;
 	m_previousPanel=nullptr;
@@ -281,7 +281,7 @@ void ExtScrolledWindow::reset()
 
 //--------------------------------------------------------------------
 
-bool ExtScrolledWindow::getCommand(BaseCommand*& cmdPtr)
+bool CmdScrolledWindow::getCommand(BaseCommand*& cmdPtr)
 {
 	if(!m_init){
 		m_dataIt=m_cmdViewList.begin();
@@ -308,14 +308,14 @@ bool ExtScrolledWindow::getCommand(BaseCommand*& cmdPtr)
 
 //--------------------------------------------------------------------
 
-bool ExtScrolledWindow::getCommand(BaseCommand*& cmdPtr, const ExtScrolledWindow::PlayMode mode)
+bool CmdScrolledWindow::getCommand(BaseCommand*& cmdPtr, const CmdScrolledWindow::PlayMode mode)
 {
-	typedef bool(ExtScrolledWindow::* Func)(BaseCommand*&);
+	typedef bool(CmdScrolledWindow::* Func)(BaseCommand*&);
 
-	Func getting=&ExtScrolledWindow::getCmd;
+	Func getting=&CmdScrolledWindow::getCmd;
 
-	if(mode==ExtScrolledWindow::PlayMode::DEMO){
-		getting=&ExtScrolledWindow::getCommand;
+	if(mode==CmdScrolledWindow::PlayMode::DEMO){
+		getting=&CmdScrolledWindow::getCommand;
 	}
 
 	while((this->*getting)(cmdPtr)){
@@ -330,7 +330,7 @@ bool ExtScrolledWindow::getCommand(BaseCommand*& cmdPtr, const ExtScrolledWindow
 
 //----------------------------------------------------------------------
 
-bool ExtScrolledWindow::swap(bool downSwap)
+bool CmdScrolledWindow::swap(bool downSwap)
 {
 	bool doSwap=false;	
 	int height=0;
@@ -392,20 +392,7 @@ bool ExtScrolledWindow::swap(bool downSwap)
 
 //--------------------------------------------------------------------
 
-void ExtScrolledWindow::updateView(const BaseCommand* cmd)
-{
-	for(BasePanel* panelPtr : m_cmdViewList){
-		if(panelPtr->getCommand()==cmd){
-			dynamic_cast<ControlCommandWrapper*>(panelPtr)->updateTimeout(
-				dynamic_cast<CtrlCommand*>(panelPtr->getCommand())->getTimeout());
-			return;
-		}
-	}
-}
-
-//--------------------------------------------------------------------
-
-bool ExtScrolledWindow::saveData(const char* fileName)
+bool CmdScrolledWindow::saveData(const char* fileName)
 {
 	std::fstream fileData(fileName, std::ios::out | std::ios::trunc);
 	if(fileData.is_open()){
@@ -429,12 +416,13 @@ bool ExtScrolledWindow::saveData(const char* fileName)
 
 //--------------------------------------------------------------------
 
-bool ExtScrolledWindow::loadDataFile(const char* fileName)
+bool CmdScrolledWindow::loadDataFile(const char* fileName)
 {
 	bool result=true;
 	std::ifstream commandFiles;
 	commandFiles.open(getFilePath(fileName), std::ifstream::in);
 	if(commandFiles.is_open()){
+
 		bool indentation=false;
 		std::string commandLine;
 		while(std::getline(commandFiles, commandLine)){
@@ -442,28 +430,24 @@ bool ExtScrolledWindow::loadDataFile(const char* fileName)
 				if(commandLine.length()==0){
 					continue;
 				}
+
 				size_t pos=commandLine.find("loop:");
+
 				if(pos==0){
 					CstrSplit<2> parts(commandLine.c_str(), ":");
 					addLoop(std::atoi(parts[1]));
 					indentation=true;
 					continue;
 				}
+
 				pos=commandLine.find("end_loop");
 				if(pos==0){
 					closeLoop();
 					indentation=false;
 					continue;
 				}
-				auto cmdPtr=ParserBuilder(commandLine.c_str());
-				if(cmdPtr){
-					if(cmdPtr->getCmdType()==CommandInputTypes::CTRL){
-						addCommand<CtrlCommand>(cmdPtr, indentation);
-					}
-					else if(cmdPtr->getCmdType()==CommandInputTypes::INPUT){
-						addCommand<InputCommand>(cmdPtr, indentation);
-					}
-				}
+
+				ParserBuilder(this, indentation, commandLine);
 			}
 			catch(...){//const std::exception& e){
 				result=false;

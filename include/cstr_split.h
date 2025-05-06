@@ -8,6 +8,8 @@
 * THE SOFTWARE. 
 * 
 * template<int N> class CstrSplit                                    *
+* class SimpleSerialization                                          *
+* template<int N> class SimpleUnserialization         	            *                                            *
 *         	                                                         *
 * Version: 1.0                                                       *
 * Date:    09-02-2025                                                *
@@ -17,6 +19,9 @@
 #define _CSTR_SPLIT_H
 
 #include "debug_utils.h"
+#include <cstring>
+
+#define SEPARATOR "#+{35sdfh4}|{7gkjf29}+#"
 
 //====================================================================
 
@@ -52,7 +57,7 @@ class CstrSplit
 			return m_chunkSize[p];
 		}
 
-		int dataSize() const
+		size_t dataSize() const
 		{
 			return length;
 		}
@@ -105,6 +110,199 @@ void CstrSplit<N>::splitData(const char* data, const char* separator)
 		t=ck[j]+spl;
 	}
 }
+
+//====================================================================
+
+template<typename T>
+struct ToString
+{
+	static std::string toStr(T t)
+	{
+		try {
+			return std::to_string(t);
+		}
+		catch (...) {
+			return std::string("!!");
+		}
+	}
+};
+
+template<>
+struct ToString<size_t>
+{
+	static std::string toStr(size_t t)
+	{
+		return std::to_string(t);
+	}
+};
+
+template<>
+struct ToString<float>
+{
+	static std::string toStr(float t)
+	{
+		return std::to_string(t);
+	}
+};
+
+template<>
+struct ToString<int>
+{
+	static std::string toStr(int t)
+	{
+		return std::to_string(t);
+	}
+};
+
+template<>
+struct ToString<std::string>
+{
+	static std::string toStr(const std::string& str)
+	{
+		return str;
+	}
+};
+
+template<>
+struct ToString<const char*>
+{
+	static std::string toStr(const char* cstr)
+	{
+		return cstr;
+	}
+};
+
+template<>
+struct ToString<bool>
+{
+	static std::string toStr(bool a)
+	{
+		if(a){
+			return std::string("true");
+		}
+		return std::string("false");
+	}
+};
+
+//====================================================================
+
+template<typename T>
+struct FromString
+{
+};
+
+template<>
+struct FromString<int>
+{
+	static int getFrom(const char* str)
+	{
+		return std::atoi(str);
+	}
+};
+
+template<>
+struct FromString<float>
+{
+	static int getFrom(const char* str)
+	{
+		return std::atof(str);
+	}
+};
+
+template<>
+struct FromString<const char*>
+{
+	static const char* getFrom(const char* str)
+	{
+		return str;
+	}
+};
+
+template<>
+struct FromString<std::string>
+{
+	static std::string getFrom(const char* str)
+	{
+		return str;
+	}
+};
+
+template<>
+struct FromString<bool>
+{
+	static bool getFrom(const char* str)
+	{
+		if(std::memcmp(str, "true", 4)==0){
+			return true;
+		}
+		return false;
+	}
+};
+
+//====================================================================
+
+class SimpleSerialization
+{
+	public:
+		SimpleSerialization()=default;
+		virtual ~SimpleSerialization()=default;
+
+		template<typename S, typename T>
+		void ToString(S s, T t)
+		{
+			m_stringData.append(s);
+			m_stringData.append(SEPARATOR);
+			m_stringData.append(::ToString<T>::toStr(t));
+		}
+
+		template<typename S, typename T, typename... Args>
+		void ToString(S s, T t, Args... args)
+		{
+			m_stringData.append(s);
+			m_stringData.append(SEPARATOR);
+			m_stringData.append(::ToString<T>::toStr(t));
+			m_stringData.append(SEPARATOR);
+			ToString(args...);
+		}
+
+		void dump(std::ostream& outputStream)
+		{
+			outputStream<<m_stringData<<"\n";
+		}
+
+	private:
+		std::string m_stringData;
+};
+
+//====================================================================
+
+template<int N>
+class SimpleUnserialization
+{
+	public:
+		SimpleUnserialization(const char* data, const char* separator)
+		:m_cstrSplit(data, separator)
+		{}
+
+		virtual ~SimpleUnserialization()=default;
+
+		template<typename T>
+		T get(const char* key)
+		{
+			size_t keySize=std::strlen(key);
+			for(size_t i=0; i<m_cstrSplit.dataSize(); i+=2){
+				if(std::memcmp(m_cstrSplit[i], key, keySize*sizeof(char))==0){
+					return FromString<T>::getFrom(m_cstrSplit[i+1]);
+				}
+			}
+			std::string excp="Not conversion rule for type of key: ";
+			excp+=key;
+			throw excp.c_str();
+		}
+
+	private:
+		CstrSplit<2*N> m_cstrSplit;
+};
 
 //====================================================================
 

@@ -32,6 +32,8 @@
 class BaseCommand;
 class InputCommand;
 class CtrlCommand;
+class ResultPopup;
+class MouseBtnCommand;
 
 //====================================================================
 
@@ -182,17 +184,26 @@ class CloseLoopPanel : public BaseWrapperPanel<BasePanel>
 };
 
 //====================================================================
+//====================================================================
 
-class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, BasePanel>
+struct CmdSettingData : public SettingData
+{
+	static constexpr int TOP_MARGIN_PADDING=10;
+	static constexpr int MARGIN_WIDTH=2;
+	static constexpr int WX_ID=WX::DELETE_CMD;
+};
+
+//--------------------------------------------------------------------
+
+class CommandPanel : public WrapperPanel<CmdSettingData, BasePanel>
 {
 	public:
-		CommandPanel(wxWindow* parent, uint posY, uint width, BaseCommand* cmd)
-		: WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, BasePanel>(parent, posY, width)
+		CommandPanel(wxWindow* parent, uint posY, uint width)
+		: WrapperPanel<CmdSettingData, BasePanel>(parent, posY, width)
 		{
-			m_baseCommandPtr=cmd;
 		}
 
-		virtual ~CommandPanel();
+		virtual ~CommandPanel()=default;
 
 		virtual void init(bool indentation);
 
@@ -215,11 +226,6 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 			return 0;
 		}
 
-		virtual BaseCommand* getCommand()
-		{
-			return m_baseCommandPtr;
-		}
-
 		virtual int getHeight() const
 		{
 			return m_height;
@@ -232,9 +238,8 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 			m_statusBtn->SetBackgroundColour(wxColour("#FFFFFF"));
 			SetBackgroundColour(wxColour("#FFFFFF"));
 		}
-		
+
 	protected:
-		BaseCommand* m_baseCommandPtr{nullptr};
 		wxBoxSizer* m_mainCol;
 		wxBoxSizer* m_paddingCol;
 		wxBoxSizer* m_sizerBody;
@@ -246,11 +251,6 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 
 		bool m_isIndented{false};
 
-		/*virtual void setSelected() override
-		{
-			s_lastSelected=this;
-		}// */
-
 		static constexpr int c_padding=30;
 
 		virtual void setTimeoutCtrl()=0;
@@ -259,7 +259,7 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 
 		DECLARE_EVENT_TABLE()
 
-	friend class ExtScrolledWindow;
+	friend class CmdScrolledWindow;
 };
 
 //====================================================================
@@ -267,32 +267,48 @@ class CommandPanel : public WrapperPanel<CommandPanel, 10, 2, WX::DELETE_CMD, Ba
 class InputCommandWrapper : public CommandPanel
 {
 	public:
-		InputCommandWrapper(wxWindow* parent, uint posY, uint width, BaseCommand* cmd);
+		InputCommandWrapper(wxWindow* parent, uint posY, uint width, InputCommand* cmd);
 
-		virtual ~InputCommandWrapper()=default;
+		virtual ~InputCommandWrapper();
 
 		virtual void init(bool indentation=false);
 
-	protected:
-		virtual void setTimeoutCtrl() override;
+		virtual BaseCommand* getCommand() override;
 
-	private:
-		static wxFloatingPointValidator<float> s_floatValidator;
-		static bool s_isValidatorSet;
+	protected:
+		InputCommand* m_cmdPtr;
+
+		virtual void setTimeoutCtrl() override;
 
 	DECLARE_EVENT_TABLE()
 };
 
 //====================================================================
 
-class ResultPopup;
+class MouseBtnCmdWrapper : public InputCommandWrapper
+{
+	public:
+		MouseBtnCmdWrapper(wxWindow* parent, uint posY, uint width, MouseBtnCommand* cmd);
+
+		virtual ~MouseBtnCmdWrapper()=default;
+
+		virtual void init(bool indentation=false);
+
+	private:
+		WX_TextCtrl* m_pressForMsInput;
+
+	DECLARE_EVENT_TABLE()
+};
+
+//====================================================================
+
 
 class ControlCommandWrapper : public CommandPanel
 {
 	public:
-		ControlCommandWrapper(wxWindow* parent, uint posY, uint width, BaseCommand* cmd);
+		ControlCommandWrapper(wxWindow* parent, uint posY, uint width, CtrlCommand* cmdPtr);
 
-		virtual ~ControlCommandWrapper()=default;
+		virtual ~ControlCommandWrapper();
 
 		virtual void init(bool indentation=false);
 
@@ -301,12 +317,15 @@ class ControlCommandWrapper : public CommandPanel
 			m_timeoutInput->ChangeValue(wxString::Format("%i", timeout));
 		}
 
+		virtual BaseCommand* getCommand() override;
+
 	protected:
 		virtual void setTimeoutCtrl() override;
 		virtual void OnCheckStatus(wxCommandEvent& event) override;
 		virtual void mkContextMenu();
 
 	private:
+		CtrlCommand* m_cmdPtr;
 		ResultPopup* m_imgCtrlViewrPtr;
 
 		DECLARE_EVENT_TABLE()

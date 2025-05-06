@@ -19,11 +19,12 @@
 #include "image_panel.h"
 #include "inputblocker.h"
 #include "input_command.h"
-#include "ext_scrolled_window.h"
+#include "cmd_scrolled_window.h"
 #include "dedicated_popups.h"
 #include "enumerations.h"
 #include "utilities.h"
 #include "settings_manager.h"
+#include "event_definitions.h"
 #include "wx_utils.h"
 
 #include <wx/wx.h>
@@ -41,6 +42,8 @@ class RecorderPlayerKM : public wxFrame
 	public:
 		RecorderPlayerKM(const wxString& title);
 		virtual ~RecorderPlayerKM();
+
+		void CommandLineInputFile(const char* file);
 
 	private:
 		enum SelectionType
@@ -158,7 +161,7 @@ class RecorderPlayerKM : public wxFrame
 		wxTextCtrl* m_screenshotInput;
 		wxComboBox* m_windowNameInput;
 
-		ExtScrolledWindow* m_scrolledWindow;
+		CmdScrolledWindow* m_cmdScrolledWindow;
 
 		wxCheckBox* m_selectAllCheck;
 		wxCheckBox* m_invertCheck;
@@ -194,7 +197,7 @@ class RecorderPlayerKM : public wxFrame
 		ProgressBar* m_progressBarPtr;
 		WxWorker* m_workerPtr; 
 
-		ExtScrolledWindow::PlayMode m_mode;
+		CmdScrolledWindow::PlayMode m_mode;
 		Cmd m_getFocusCmd;
 
 		CommandInputMode m_commandInputMode;
@@ -231,15 +234,18 @@ class RecorderPlayerKM : public wxFrame
 		void takeScreenshotByWindow(const char* windowName);
 
 		void takeRoiScreenshoot(PanelStates exitState, int roiMode);
-		void RunCommands(ExtScrolledWindow::PlayMode mode);
+		void RunCommands(CmdScrolledWindow::PlayMode mode);
 		void SequenceFinished();
 
 		void mkMenu(bool allowScreenshot, bool fullMenu);
 		size_t getFirstIndex();
 
+		void loadFile();
+
 		void addCommand();
-		template<typename T=InputCommand>
-		void addCommand(BaseCommand* cmd);
+
+		template<typename T>
+		void addCommand(T* cmd);
 
 		void OnWorker(wxCommandEvent& event);
 		void postEvent(wxEventType commandEventType, int id);
@@ -341,20 +347,18 @@ inline void RecorderPlayerKM::postEvent(wxEventType commandEventType, int id)
 
 //--------------------------------------------------------------------
 
-template<typename T=InputCommand>
-void RecorderPlayerKM::addCommand(BaseCommand* cmd)
+inline void RecorderPlayerKM::OnSelectedFile(wxCommandEvent& event)
 {
-	if(cmd){
-		m_scrolledWindow->addCommand<T>(cmd, m_indentation);
-		addCommand();
-	}
+	loadFile();
 }
 
-template<>
-inline void RecorderPlayerKM::addCommand<CtrlCommand>(BaseCommand* cmd)
+//--------------------------------------------------------------------
+
+template<typename T>
+void RecorderPlayerKM::addCommand(T* cmd)
 {
 	if(cmd){
-		m_scrolledWindow->addCommand<CtrlCommand>(cmd, m_indentation);
+		m_cmdScrolledWindow->addCommand<T>(cmd, m_indentation);
 		addCommand();
 	}
 }
@@ -365,11 +369,11 @@ inline void RecorderPlayerKM::OnSelectInvert(wxCommandEvent& event)
 {
 	if(event.GetId()==WX::SELECT_ALL){
 		m_selectAllCheck->SetValue(false);
-		m_scrolledWindow->selectAll();
+		m_cmdScrolledWindow->selectAll();
 	}
 	else{
 		m_invertCheck->SetValue(false);
-		m_scrolledWindow->invert();
+		m_cmdScrolledWindow->invert();
 	}
 }
 

@@ -15,7 +15,7 @@
 **********************************************************************/
 #include "km_recorder_player.h"
 
-#include "event_definitions.h"
+
 #include "wx_textctrl.h"
 #include "wxstring_array.h"
 #include "utilities.h"
@@ -23,6 +23,9 @@
 #include "debug_utils.h"
 #include "progress_bar.h"
 #include "wx_worker.h"
+
+#include "keyboard_emulator.h"
+#include "mouse_emulator.h"
 
 #include <wx/display.h>
 #include <wx/menu.h>
@@ -34,7 +37,7 @@
 #define FULL_SCREEN "root"
 #define SCREEN_BACKGROUND "background.png"
 
-#define CMD_LIST_WIDTH 490
+#define CMD_LIST_WIDTH 550
 #define CMD_LIST_HEIGHT 450
 
 extern MouseEmulatorI* s_MouseEmulator;
@@ -74,7 +77,7 @@ static wxBitmapButton* makeButton(wxWindow* parent, const char* icon, int id=-1)
 	return new wxBitmapButton(parent, id, mkBitmapBundle(icon), wxDefaultPosition, wxSize(-1, -1));
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 : wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition,
@@ -219,7 +222,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 
 	m_fileDropDown=new wxChoice(
 		this,
-		WX::SAVED_FILES,
+		WX::SELECT_FILE,
 		wxDefaultPosition,
 		wxDefaultSize,
 		fileChoices,
@@ -263,13 +266,13 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	//-----------------------------------------------
 	//--------------- Command List ------------------
 
-	m_scrolledWindow=new ExtScrolledWindow(this, WX::CMD_LIST, wxDefaultPosition,
+	m_cmdScrolledWindow=new CmdScrolledWindow(this, WX::CMD_LIST, wxDefaultPosition,
 								FromDIP(wxSize(CMD_LIST_WIDTH, CMD_LIST_HEIGHT)));
 
 	m_moveUpBtn=makeButton(this, "actions/go-up-symbolic.symbolic.png");
 
 	m_moveUpBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event){
-		if(m_scrolledWindow->swapUp()){
+		if(m_cmdScrolledWindow->swapUp()){
 			m_dataChanged++;
 		}
 	});
@@ -277,7 +280,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	m_moveDnBtn=makeButton(this, "actions/go-down-symbolic.symbolic.png");
 
 	m_moveDnBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event){
-		if(m_scrolledWindow->swapDown()){
+		if(m_cmdScrolledWindow->swapDown()){
 			m_dataChanged++;
 		}
 	});
@@ -285,7 +288,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	//layout
 	{
 		wxBoxSizer* row = new wxBoxSizer(wxHORIZONTAL);
-		row->Add(m_scrolledWindow, 1, wxEXPAND | wxRIGHT, FromDIP(10));
+		row->Add(m_cmdScrolledWindow, 1, wxEXPAND | wxRIGHT, FromDIP(10));
 
 		wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
 		col->Add(m_moveUpBtn);
@@ -403,11 +406,6 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 		m_dataChanged++;
 	}, EvtID::CHANGES_MADE);
 
-	Bind(wxEVT_CUSTOM_EVENT, [this](wxCommandEvent& event){
-		m_scrolledWindow->updateView(static_cast<BaseCommand*>(event.GetClientData()));
-		Refresh();
-	}, EvtID::UPDATE_CMD_VIEW);
-
 	Bind(wxEVT_ACTIVATE, [this](wxActivateEvent& event){
 		if(m_playStatus==PlayStatus::PLAYING){
 			if(event.GetActive() ){
@@ -419,7 +417,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	});
 
 	Bind(wxEVT_CUSTOM_EVENT, [this](wxCommandEvent& event){
-		m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_scrolledWindow->getCommandCount()));
+		m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_cmdScrolledWindow->getCommandCount()));
 	}, EvtID::CMD_COUNT_UPDATED);
 
 	//===============================================
@@ -467,15 +465,17 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	checkConnection();
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 RecorderPlayerKM::~RecorderPlayerKM()
 {
 	m_settings.save();
 	wxDELETE(m_statusBar);
-	m_scrolledWindow->clear();
+	m_cmdScrolledWindow->clear();
 
 	// remove unused images
+	removeOrphanImgs(m_fileDropDown);
+	#if 0
 	std::vector<std::pair<std::string, bool> > imgVector;
 
 	std::error_code ec;
@@ -492,22 +492,23 @@ RecorderPlayerKM::~RecorderPlayerKM()
 		}
 	}
 	
-	std::string pattern=".png";
-	pattern.append(SEPARATOR);
+	const std::string pattern=".png";
 	wxString fileName;
 
 	for(unsigned int i=0; i<m_fileDropDown->GetCount(); i++){
 		fileName=m_fileDropDown->GetString(i);
 		std::ifstream commandFiles;
+		
 		commandFiles.open(getFilePath(fileName.mb_str()), std::ifstream::in);
 		if(commandFiles.is_open()){
 	
 			std::string commandLine;
 			std::string img;
 			while(std::getline(commandFiles, commandLine)){
-				if(commandLine.find(pattern)!=std::string::npos){
-					CstrSplit<20> parts(commandLine.c_str(), SEPARATOR);
-					const char* imageName=parts[3];
+				size_t pos=commandLine.find(pattern);
+				if(pos!=std::string::npos){
+					size_t pos0=commandLine.find("\":\"", pos-25);
+					std::string imageName=commandLine.substr(pos0+3, pos+1-pos0);
 					for(auto& data : imgVector){
 						if(data.first==imageName){
 							data.second=true;
@@ -525,6 +526,8 @@ RecorderPlayerKM::~RecorderPlayerKM()
 			removeImage(data.first);
 		}
 	}
+	#endif
+
 	wxDELETE(m_roiOptions);
    wxDELETE(m_selectWindowPopup);
    wxDELETE(m_screenshotPopup);
@@ -532,7 +535,7 @@ RecorderPlayerKM::~RecorderPlayerKM()
    wxDELETE(m_settingsPopup);
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 
@@ -613,7 +616,7 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_CHECKBOX(WX::SELECT_ALL, RecorderPlayerKM::OnSelectInvert)
 	EVT_CHECKBOX(WX::INVERT, RecorderPlayerKM::OnSelectInvert)
 
-	EVT_CHOICE(WX::SAVED_FILES, RecorderPlayerKM::OnSelectedFile)
+	EVT_CHOICE(WX::SELECT_FILE, RecorderPlayerKM::OnSelectedFile)
 
 	EVT_COMMAND(EvtID::EDIT_CTRL_CMD, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnEditCtrlCommand)
 	EVT_COMMAND(EvtID::ADD_CTRL_CMD, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnAddCtrlCmd)
@@ -625,9 +628,11 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_COMMAND(EvtID::CONNECTION_OK, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnWorker)
 	EVT_COMMAND(EvtID::CONNECTION_FAILED, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnWorker)
 
+	EVT_COMMAND(WX::PLAY, wxEVT_CUSTOM_EVENT, RecorderPlayerKM::OnControlBtns)
+
 END_EVENT_TABLE()
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::UpdateConnection(bool isConnected)
 {
@@ -641,7 +646,7 @@ void RecorderPlayerKM::UpdateConnection(bool isConnected)
 			m_fileManagerBtn->Enable();
 		}
 
-		if(m_scrolledWindow->size()>0){
+		if(m_cmdScrolledWindow->size()>0){
 			m_playBtn->Enable();
 		}
 		
@@ -649,7 +654,7 @@ void RecorderPlayerKM::UpdateConnection(bool isConnected)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnWorker(wxCommandEvent& event)
 {
@@ -670,7 +675,7 @@ void RecorderPlayerKM::OnWorker(wxCommandEvent& event)
 	m_workerPtr=nullptr;
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::checkConnection()
 {
@@ -717,7 +722,7 @@ void RecorderPlayerKM::checkConnection()
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 size_t RecorderPlayerKM::getFirstIndex()
 {
@@ -726,18 +731,18 @@ size_t RecorderPlayerKM::getFirstIndex()
 	if(lastInputMode!=m_commandInputMode){
 		lastInputMode=m_commandInputMode;
 		if(m_commandInputMode==CommandInputMode::REPEAT_ALL){
-			firstCommand=m_scrolledWindow->size()-1;
+			firstCommand=m_cmdScrolledWindow->size()-1;
 		}
 	}
 
 	if(lastInputMode!=CommandInputMode::REPEAT_ALL){
-		firstCommand=m_scrolledWindow->size()-1;
+		firstCommand=m_cmdScrolledWindow->size()-1;
 	}
 
 	return firstCommand;
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnSelection(wxCommandEvent& event)
 {
@@ -773,7 +778,7 @@ void RecorderPlayerKM::OnSelection(wxCommandEvent& event)
 	m_inputBlocker->clearSelection();
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 std::string RecorderPlayerKM::imageId()
 {
@@ -785,7 +790,7 @@ std::string RecorderPlayerKM::imageId()
 	return id;
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnAddCtrlCmd(wxCommandEvent& event)
 {
@@ -796,7 +801,7 @@ void RecorderPlayerKM::OnAddCtrlCmd(wxCommandEvent& event)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::addCommand()
 {
@@ -807,12 +812,12 @@ void RecorderPlayerKM::addCommand()
 	getFirstIndex();
 	if(m_commandInputMode!=CommandInputMode::QUIET){
 		m_playStatus=PlayStatus::PLAYING;
-		RunCommands(ExtScrolledWindow::PlayMode::DEMO);
+		RunCommands(CmdScrolledWindow::PlayMode::DEMO);
 	}
-	m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_scrolledWindow->getCommandCount()));
+	m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_cmdScrolledWindow->getCommandCount()));
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::takeRoiScreenshoot(PanelStates exitState, int roiMode)
 {
@@ -835,7 +840,7 @@ void RecorderPlayerKM::takeRoiScreenshoot(PanelStates exitState, int roiMode)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnLoopBtn(wxCommandEvent& event)
 {
@@ -844,7 +849,7 @@ void RecorderPlayerKM::OnLoopBtn(wxCommandEvent& event)
 		m_openLoopBtn->SetLabel(wxT("Open Loop"));
 	}
 	else if(m_indentation){
-		m_scrolledWindow->closeLoop();
+		m_cmdScrolledWindow->closeLoop();
 		m_openLoopBtn->SetLabel(wxT("Open Loop"));
 		m_indentation=false;
 	}
@@ -852,12 +857,12 @@ void RecorderPlayerKM::OnLoopBtn(wxCommandEvent& event)
 		m_openLoopBtn->SetLabel(wxT("Close Loop"));
 		if(!m_indentation){
 			m_indentation=true;
-			m_scrolledWindow->addLoop(2);
+			m_cmdScrolledWindow->addLoop(2);
 		}
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnEditCtrlCommand(wxCommandEvent& event)
 {
@@ -868,13 +873,13 @@ void RecorderPlayerKM::OnEditCtrlCommand(wxCommandEvent& event)
 	m_editCtrlCmdPopup->Popup();
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 bool RecorderPlayerKM::SaveChangesData()
 {
 	if(m_dataChanged>0 ||
 		(m_fileDropDown->GetCurrentSelection()==0 &&
-			m_scrolledWindow->getCommandCount()>0)){
+			m_cmdScrolledWindow->getCommandCount()>0)){
 		int response=m_saveDataDialog->ShowModal();
 		if(wxID_NO!=response){
 			if(wxID_YES==response){
@@ -886,7 +891,7 @@ bool RecorderPlayerKM::SaveChangesData()
 	return false;
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnSetRoiType(wxCommandEvent& evt)
 {
@@ -917,7 +922,7 @@ void RecorderPlayerKM::OnSetRoiType(wxCommandEvent& evt)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 {
@@ -930,10 +935,10 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 			addCommand(MoveMouseCommand::Builder("Move mouse", m_settings.getTimePadding(), m_click.x, m_click.y, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DO_LEFT_CLICK:
-			addCommand(MouseLeftBtnCommand::Builder("Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, m_currentWindow.c_str()));
+			addCommand<MouseBtnCommand>(MouseLeftBtnCommand::Builder("Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, 100, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DO_RIGHT_CLICK:
-			addCommand(MouseRightBtnCommand::Builder("Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, m_currentWindow.c_str()));
+			addCommand<MouseBtnCommand>(MouseRightBtnCommand::Builder("Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, 50, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::SCREENSHOT_CMD:
 			m_screenshotPopup->Popup();
@@ -992,7 +997,7 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 	};
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::ManagePanels(PanelStates state)
 {
@@ -1027,7 +1032,7 @@ void RecorderPlayerKM::ManagePanels(PanelStates state)
 	Update();
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::mkMenu(bool allowScreenshot, bool fullMenu)
 {
@@ -1084,7 +1089,7 @@ void RecorderPlayerKM::mkMenu(bool allowScreenshot, bool fullMenu)
 	PopupMenu(&menu);
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::SetCurrentWindow(const char* windowName)
 {
@@ -1121,18 +1126,18 @@ void RecorderPlayerKM::SetCurrentWindow(const char* windowName)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
-void RecorderPlayerKM::RunCommands(ExtScrolledWindow::PlayMode mode)
+void RecorderPlayerKM::RunCommands(CmdScrolledWindow::PlayMode mode)
 {
 	ManagePanels(PanelStates::Playing);
 
 	m_mode=mode;
-	m_scrolledWindow->reset();
+	m_cmdScrolledWindow->reset();
 
 	int ms=m_settings.getTimeDelay();
-	if(m_mode==ExtScrolledWindow::PlayMode::DEMO){
-		m_scrolledWindow->advance2End(getFirstIndex());
+	if(m_mode==CmdScrolledWindow::PlayMode::DEMO){
+		m_cmdScrolledWindow->advance2End(getFirstIndex());
 		ms=500;
 	}
 
@@ -1140,7 +1145,7 @@ void RecorderPlayerKM::RunCommands(ExtScrolledWindow::PlayMode mode)
 	m_timer.StartOnce(ms);
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnRunCmdTimer(wxTimerEvent& event)
 {
@@ -1149,7 +1154,7 @@ void RecorderPlayerKM::OnRunCmdTimer(wxTimerEvent& event)
 	}
 
 	if(m_currentRunningCmd==nullptr){
-		if(m_scrolledWindow->getCommand(m_currentRunningCmd, m_mode)){
+		if(m_cmdScrolledWindow->getCommand(m_currentRunningCmd, m_mode)){
 			m_currentRunningCmd->execute();
 			m_timer.StartOnce(m_currentRunningCmd->wait());
 		}
@@ -1163,7 +1168,7 @@ void RecorderPlayerKM::OnRunCmdTimer(wxTimerEvent& event)
 
 			m_currentRunningCmd=nullptr;
 
-			m_scrolledWindow->lastCommandFailed();
+			m_cmdScrolledWindow->lastCommandFailed();
 			
 			if((cmdExitCode & 1)>0){
 				SequenceFinished();
@@ -1179,7 +1184,7 @@ void RecorderPlayerKM::OnRunCmdTimer(wxTimerEvent& event)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::SequenceFinished()
 {
@@ -1211,7 +1216,7 @@ void RecorderPlayerKM::SequenceFinished()
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::takeScreenshotByWindow(const char* windowName)
 {
@@ -1248,9 +1253,7 @@ void RecorderPlayerKM::takeScreenshotByWindow(const char* windowName)
 	}
 }
 
-
-
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::windowLevelInput(const char* windowName)
 {
@@ -1289,7 +1292,7 @@ void RecorderPlayerKM::windowLevelInput(const char* windowName)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnTextInput(wxCommandEvent& event)
 {
@@ -1317,7 +1320,7 @@ void RecorderPlayerKM::OnTextInput(wxCommandEvent& event)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnKeybordBtns(wxCommandEvent& event)
 {
@@ -1460,7 +1463,7 @@ void RecorderPlayerKM::OnKeybordBtns(wxCommandEvent& event)
 	};
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 bool RecorderPlayerKM::Pause()
 {
@@ -1485,7 +1488,7 @@ void RecorderPlayerKM::OnControlBtns(wxCommandEvent& event)
 					m_playStatus=PlayStatus::PLAYING;
 					m_state=State::PLAY;
 					m_inputBlocker->reset();
-					RunCommands(ExtScrolledWindow::PlayMode::NORMAL);					
+					RunCommands(CmdScrolledWindow::PlayMode::NORMAL);					
 					m_playBtn->SetBitmap(m_pauseBitmapBundle);
 				}
 				else{
@@ -1527,10 +1530,10 @@ void RecorderPlayerKM::OnControlBtns(wxCommandEvent& event)
 					if(m_commandInputMode==CommandInputMode::REPEAT_ALL ||
 						m_commandInputMode==CommandInputMode::REPEAT_LAST)
 					{
-						if(m_scrolledWindow->getCommandCount()>0){
+						if(m_cmdScrolledWindow->getCommandCount()>0){
 							m_inputBlocker->clearBackground();
 							m_playStatus=PlayStatus::PLAYING;
-							RunCommands(ExtScrolledWindow::PlayMode::DEMO);
+							RunCommands(CmdScrolledWindow::PlayMode::DEMO);
 						}
 					}
 				}
@@ -1542,7 +1545,7 @@ void RecorderPlayerKM::OnControlBtns(wxCommandEvent& event)
 	};
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnSave(wxCommandEvent& event)
 {
@@ -1574,7 +1577,7 @@ void RecorderPlayerKM::OnSave(wxCommandEvent& event)
 		fileExists=true;
 	}
 
-	if(m_scrolledWindow->saveData(filePath.c_str())){
+	if(m_cmdScrolledWindow->saveData(filePath.c_str())){
 		m_dataChanged=0;
 		s_fileValidator.AddExclude(input.c_str());
 		if(!fileExists){
@@ -1592,13 +1595,26 @@ void RecorderPlayerKM::OnSave(wxCommandEvent& event)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
-void RecorderPlayerKM::OnSelectedFile(wxCommandEvent& event)
+void RecorderPlayerKM::CommandLineInputFile(const char* file)
+{
+	int idx=m_fileDropDown->FindString(file);
+	if(idx!=wxNOT_FOUND){
+		m_fileDropDown->SetSelection(idx);
+		loadFile();
+		wxCommandEvent event(wxEVT_CUSTOM_EVENT, WX::PLAY);
+		wxPostEvent(this, event);
+	}
+}
+
+//--------------------------------------------------------------------
+
+void RecorderPlayerKM::loadFile()
 {
 	static int selectedIdx=0;
 
-	if(m_scrolledWindow->size()!=0){
+	if(m_cmdScrolledWindow->size()!=0){
 		if(m_dataChanged>0){
 			int response=m_saveDataDialog->ShowModal();
 			if(wxID_NO!=response){
@@ -1622,11 +1638,11 @@ void RecorderPlayerKM::OnSelectedFile(wxCommandEvent& event)
 	}
 
 	m_dataChanged=0;
-	if(m_scrolledWindow->loadDataFile(selectedFile.mb_str())){
+	if(m_cmdScrolledWindow->loadDataFile(selectedFile.mb_str())){
 		m_indentation=false;
 		m_playBtn->Enable();
 		m_saveBtn->Enable();
-		m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_scrolledWindow->getCommandCount()));
+		m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_cmdScrolledWindow->getCommandCount()));
 	}
 	else{
 		clearCommands();
@@ -1634,7 +1650,7 @@ void RecorderPlayerKM::OnSelectedFile(wxCommandEvent& event)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::initPopups()
 {
@@ -2339,7 +2355,7 @@ void RecorderPlayerKM::initPopups()
 	});
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::clearCommands()
 {
@@ -2348,14 +2364,14 @@ void RecorderPlayerKM::clearCommands()
 	m_dataChanged=0;
 	m_inputBlocker->reset();
 
-	m_scrolledWindow->clear();
+	m_cmdScrolledWindow->clear();
 
 	m_recordingBtn->SetLabel(_T("Start Recording"));
 	m_playBtn->Disable();
 	m_saveBtn->Disable();
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 void RecorderPlayerKM::OnModeSelection(CommandInputMode mode)
 {
@@ -2372,7 +2388,7 @@ void RecorderPlayerKM::OnModeSelection(CommandInputMode mode)
 	}
 }
 
-//====================================================================
+//--------------------------------------------------------------------
 
 const char* RecorderPlayerKM::session(bool regenerate)
 {

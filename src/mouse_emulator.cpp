@@ -25,18 +25,24 @@
 
 //====================================================================
 
-void MouseEmulatorI::clickLeftBtn()
+void MouseEmulatorI::clickLeftBtn(uint pressForMs)
 {
 	buttonDown(MOUSE_BUTTONS::LEFT);
+	if(pressForMs>0){
+		std::this_thread::sleep_for(std::chrono::milliseconds(pressForMs));
+	}
 	buttonUp(MOUSE_BUTTONS::LEFT);
 	std::this_thread::sleep_for(std::chrono::milliseconds(15));
 }
 
 //--------------------------------------------------------------------
 
-void MouseEmulatorI::clickRightBtn()
+void MouseEmulatorI::clickRightBtn(uint pressForMs)
 {
 	buttonDown(MOUSE_BUTTONS::RIGHT);
+	if(pressForMs>0){
+		std::this_thread::sleep_for(std::chrono::milliseconds(pressForMs));
+	}
 	buttonUp(MOUSE_BUTTONS::RIGHT);
 	std::this_thread::sleep_for(std::chrono::milliseconds(15));
 }
@@ -107,7 +113,7 @@ void MouseEmulatorI::select(uint absX, uint absY, uint width, uint height, Clien
 	dbg(absX, " + ", width, " : ", absY, " + ", height);
 	go2Position(absX, absY, getMousePosition);
 	buttonDown(MOUSE_BUTTONS::LEFT);
-	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	moveAbs(absX+width, absY+height, getMousePosition);
 	buttonUp(MOUSE_BUTTONS::LEFT);
 }
@@ -118,7 +124,7 @@ void MouseEmulatorI::drag(uint startX, uint startY, uint endX, uint endY, Client
 {
 	go2Position(startX, startY, getMousePosition);
 	buttonDown(MOUSE_BUTTONS::LEFT);
-	std::this_thread::sleep_for(std::chrono::milliseconds(25));
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	moveAbs(endX, endY, getMousePosition);
 	buttonUp(MOUSE_BUTTONS::LEFT);
 }

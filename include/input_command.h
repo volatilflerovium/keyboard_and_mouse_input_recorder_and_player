@@ -30,10 +30,7 @@
 **********************************************************************/
 #ifndef INPUT_COMMAND_H
 #define INPUT_COMMAND_H
-
-#include "keyboard_emulator.h"
-#include "mouse_emulator.h"
-
+#include "key_conversion.h"
 #include "utilities.h"
 #include "debug_utils.h"
 
@@ -43,12 +40,6 @@
 //====================================================================
 
 typedef std::function<void()> Cmd;
-
-typedef void(KeyboardEmulatorI::* Func)(void);
-
-extern MouseEmulatorI* s_MouseEmulator;
-
-extern KeyboardEmulatorI* s_KeyboardEmulator;
 
 void MouseLeftClick(int x, int y);
 
@@ -74,6 +65,7 @@ enum class CommandInputTypes
 {
 	CTRL,
 	INPUT,
+	MOUSE,
 };
 
 enum CTRL_CMD_MODE
@@ -195,7 +187,6 @@ class BaseCommand
 		virtual ~BaseCommand()=default;
 
 		virtual void execute();
-		virtual std::string toString();
 
 		// wait after execution
 		virtual uint wait() const=0;
@@ -215,7 +206,6 @@ class BaseCommand
 	protected:
 		std::string m_description;
 		Cmd m_cmd{[](){}};
-		StrCmd m_strCmd{[](){return "not set.";}};
 		bool m_run;
 };
 
@@ -224,13 +214,6 @@ class BaseCommand
 inline void BaseCommand::execute()
 {
 	m_cmd();
-}
-
-//--------------------------------------------------------------------
-
-inline std::string BaseCommand::toString()
-{
-	return m_strCmd();
 }
 
 //--------------------------------------------------------------------
@@ -295,12 +278,6 @@ class InputCommand : public BaseCommand
 			m_wait=t;
 		}
 
-		virtual void print(std::ostream& outputStream) override
-		{
-			outputStream<<ToString2(m_strCmd(), m_wait);
-			outputStream<<"\n";
-		}
-
 		virtual CommandInputTypes getCmdType() override
 		{
 			return CommandInputTypes::INPUT;
@@ -319,10 +296,12 @@ class TextCommand : public InputCommand
 
 		virtual ~TextCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, const std::string& text)
+		static TextCommand* Builder(const char* description, int wait, const std::string& text)
 		{
 			return new TextCommand(description, wait, text);
 		}
+
+		virtual void print(std::ostream& outputStream) override;
 
 	private:
 		std::string m_text;
@@ -337,10 +316,12 @@ class LineCommand : public InputCommand
 
 		virtual ~LineCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, const std::string& line)
+		static LineCommand* Builder(const char* description, int wait, const std::string& line)
 		{
 			return new LineCommand(description, wait, line);
 		}
+
+		virtual void print(std::ostream& outputStream) override;
 
 	private:
 		std::string m_line;
@@ -359,10 +340,12 @@ class KeyCommad : public InputCommand
 
 		virtual ~KeyCommad()=default;
 
-		static InputCommand* Builder(const char* description, int keyCode, int wait)
+		static KeyCommad* Builder(const char* description, int keyCode, int wait)
 		{
 			return new KeyCommad(description, wait, keyCode);
 		}
+
+		virtual void print(std::ostream& outputStream) override;
 
 	private:
 		SPKEYS m_keyCode;
@@ -382,6 +365,8 @@ class UnicodeCommand : public InputCommand
 			return new UnicodeCommand(description, wait, codePoint);
 		}
 
+		virtual void print(std::ostream& outputStream) override;
+
 	private:
 		std::string m_codePoint;
 };
@@ -397,6 +382,8 @@ class ShortcutCommand : public InputCommand
 
 		static ShortcutCommand* Builder(const char* description, int wait, const char* shortcut);
 
+		virtual void print(std::ostream& outputStream) override;
+
 	private:
 		std::string m_shortcut;
 };
@@ -410,7 +397,7 @@ class MoveMouseCommand : public InputCommand, public WindowOffset
 
 		virtual ~MoveMouseCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, int x, int y, const char* windowName)
+		static MoveMouseCommand* Builder(const char* description, int wait, int x, int y, const char* windowName)
 		{
 			return new MoveMouseCommand(description, wait, x, y, windowName);
 		}
@@ -420,6 +407,8 @@ class MoveMouseCommand : public InputCommand, public WindowOffset
 			return m_statusCode;
 		}
 
+		virtual void print(std::ostream& outputStream) override;
+
 	private:
 		int m_x;
 		int m_y;
@@ -428,52 +417,74 @@ class MoveMouseCommand : public InputCommand, public WindowOffset
 
 //====================================================================
 
-class MouseLeftBtnCommand : public InputCommand, public WindowOffset
+class MouseBtnCommand : public InputCommand, public WindowOffset
+{
+	public:
+		MouseBtnCommand(const char* description, int wait, int x, int y, const char* windowName);
+
+		virtual ~MouseBtnCommand()=default;
+
+		virtual int getExitCode() const override
+		{
+			return m_statusCode;
+		}
+
+		uint getPressFor() const
+		{
+			return m_pressForMs;
+		}
+
+		void setPressFor(uint pressForMs)
+		{
+			m_pressForMs=pressForMs;
+		}
+
+		virtual CommandInputTypes getCmdType() override
+		{
+			return CommandInputTypes::MOUSE;
+		}
+
+	protected:
+		int m_x;
+		int m_y;
+		uint m_statusCode;
+		uint m_pressForMs;
+};
+
+
+class MouseLeftBtnCommand : public MouseBtnCommand
 {
 	public:
 		MouseLeftBtnCommand(const char* description, int wait, int x, int y, const char* windowName);
 
 		virtual ~MouseLeftBtnCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, int x, int y, const char* windowName)
+		static MouseLeftBtnCommand* Builder(const char* description, int wait, int x, int y, uint pressForMs, const char* windowName)
 		{
-			return new MouseLeftBtnCommand(description, wait, x, y, windowName);
+			auto cmd=new MouseLeftBtnCommand(description, wait, x, y, windowName);
+			cmd->setPressFor(pressForMs);
+			return cmd;
 		}
 
-		virtual int getExitCode() const override
-		{
-			return m_statusCode;
-		}
-
-	private:
-		int m_x;
-		int m_y;
-		uint m_statusCode;
+		virtual void print(std::ostream& outputStream) override;
 };
 
 //====================================================================
 
-class MouseRightBtnCommand : public InputCommand, public WindowOffset
+class MouseRightBtnCommand : public MouseBtnCommand
 {
 	public:
 		MouseRightBtnCommand(const char* description, int wait, int x, int y, const char* windowName);
 
 		virtual ~MouseRightBtnCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, int x, int y, const char* windowName)
+		static MouseRightBtnCommand* Builder(const char* description, int wait, int x, int y, uint pressForMs, const char* windowName)
 		{
-			return new MouseRightBtnCommand(description, wait, x, y, windowName);
+			auto cmd=new MouseRightBtnCommand(description, wait, x, y, windowName);
+			cmd->setPressFor(pressForMs);
+			return cmd;
 		}
-
-		virtual int getExitCode() const override
-		{
-			return m_statusCode;
-		}
-
-	private:
-		int m_x;
-		int m_y;
-		uint m_statusCode;
+		virtual void print(std::ostream& outputStream) override;
 };
 
 //====================================================================
@@ -485,10 +496,12 @@ class MouseSelectCommand : public InputCommand, public WindowOffset
 
 		virtual ~MouseSelectCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, int posX, int posY, int width, int height, const char* windowName)
+		static MouseSelectCommand* Builder(const char* description, int wait, int posX, int posY, int width, int height, const char* windowName)
 		{
 			return new MouseSelectCommand(description, wait, posX, posY, width, height, windowName);
 		}
+
+		virtual void print(std::ostream& outputStream) override;
 
 	private:
 		int m_posX;
@@ -508,7 +521,7 @@ class MouseDragCommand : public InputCommand, public WindowOffset
 
 		virtual ~MouseDragCommand()=default;
 
-		static InputCommand* Builder(const char* description, int wait, int startX, int startY, int endX, int endY, const char* windowName)
+		static MouseDragCommand* Builder(const char* description, int wait, int startX, int startY, int endX, int endY, const char* windowName)
 		{
 			if(startX<0){				
 				return new MouseDragCommand(description, wait, endX, endY, windowName);
@@ -516,10 +529,12 @@ class MouseDragCommand : public InputCommand, public WindowOffset
 			return new MouseDragCommand(description, wait, startX, startY, endX, endY, windowName);
 		}
 
-		static InputCommand* Builder(const char* description, int wait, int endX, int endY, const char* windowName)
+		static MouseDragCommand* Builder(const char* description, int wait, int endX, int endY, const char* windowName)
 		{
 			return new MouseDragCommand(description, wait, endX, endY, windowName);
 		}
+
+		virtual void print(std::ostream& outputStream) override;
 
 	private:
 		int m_startX;
@@ -562,6 +577,24 @@ class CtrlCommand : public BaseCommand, public WindowOffset
 			return cmd;
 		}
 
+		static CtrlCommand* Builder(bool run, 
+			const char* description, const char* baseImageName, const char* roiStr,
+			const char* windowName, uint threshold, uint sensitivity, uint timeout,
+			bool similarity, bool strictRun
+		)
+		{
+			CtrlCommand* tmpPtr=new CtrlCommand(description, baseImageName, roiStr, windowName, false);
+
+			tmpPtr->setSimilarity(similarity);
+			tmpPtr->updateActive(run);
+			tmpPtr->setThreshold(threshold);
+			tmpPtr->setSensitivity(sensitivity);
+			tmpPtr->setRestriction(strictRun);
+			tmpPtr->updateTime(timeout);
+
+			return tmpPtr;
+		}
+
 		virtual bool ready() override;
 
 		virtual int getExitCode() const override
@@ -600,24 +633,7 @@ class CtrlCommand : public BaseCommand, public WindowOffset
 			m_similarity=sim;
 		}
 
-		virtual void print(std::ostream& outputStream) override
-		{
-			m_cleanImg=false;
-			outputStream<<ToString2(
-				static_cast<int>(CommandTypes::Ctrl),
-				m_description,
-				m_run,
-				m_baseImageName,
-				m_roiStr,
-				m_windowName,
-				m_similarity,
-				m_threshold,
-				m_sensitivity,
-				m_strictRun,
-				getTimeout()
-			);
-			outputStream<<"\n";
-		}
+		virtual void print(std::ostream& outputStream) override;
 
 		virtual CommandInputTypes getCmdType() override
 		{

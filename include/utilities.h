@@ -25,8 +25,6 @@
 * bool wxTakeScreenshot(const int, const char*, const char*, bool manual);
 * bool isRGB(const char*);                                           *
 * bool isHex(const char*);                                           *
-* template<typename T> struct ToString                               *
-* template<typename T, typename... Args> std::string ToString2(T , Args...)
 *         	                                                         *
 * Version: 1.0                                                       *
 * Date:    09-02-2025                                                *
@@ -39,10 +37,7 @@
 
 #include <cstring>
 #include <string>
-#include <functional>
 #include <memory>
-
-#define SEPARATOR "#+|+#"
 
 //====================================================================
 
@@ -89,7 +84,6 @@ struct WindowRect
 WindowRect getWindowRect(const char* windowName, bool visible);
 
 std::string getWindowROI(const char* windowName);
-
 
 //====================================================================
 
@@ -142,6 +136,9 @@ inline bool removeImage(const std::string& imageName)
 {
 	return removeImage(imageName.c_str());
 }
+
+class wxChoice;
+void removeOrphanImgs(wxChoice* fileDropDown);
 
 //====================================================================
 
@@ -227,109 +224,6 @@ inline bool wxTakeScreenshot(const int ms, const std::string& windowName, const 
 bool isRGB(const char* str);
 
 bool isHex(const char* str);
-
-//====================================================================
-
-typedef std::function<std::string()> StrCmd;
-
-template<typename T>
-struct ToString
-{
-	static std::string toStr(T t)
-	{
-		try {
-			return std::to_string(t);
-		}
-		catch (...) {
-			return std::string("!!");
-		}
-	}
-};
-
-template<>
-struct ToString<size_t>
-{
-	static std::string toStr(size_t t)
-	{
-		return std::to_string(t);
-	}
-};
-
-template<>
-struct ToString<float>
-{
-	static std::string toStr(float t)
-	{
-		return std::to_string(t);
-	}
-};
-
-template<>
-struct ToString<int>
-{
-	static std::string toStr(int t)
-	{
-		return std::to_string(t);
-	}
-};
-
-template<>
-struct ToString<std::string>
-{
-	static std::string toStr(const std::string& str)
-	{
-		return str;
-	}
-};
-
-template<>
-struct ToString<const char*>
-{
-	static std::string toStr(const char* cstr)
-	{
-		return cstr;
-	}
-};
-
-template<>
-struct ToString<bool>
-{
-	static std::string toStr(bool a)
-	{
-		if(a){
-			return std::string("true");
-		}
-		return std::string("false");
-	}
-};
-
-template<typename T>
-std::string ToString2(T t)
-{
-	std::string str;
-	str.append(ToString<T>::toStr(t));
-	return str;
-}
-
-template<typename S, typename T>
-std::string ToString2(S s, T t)
-{
-	std::string str;
-	str.append(ToString<S>::toStr(s));
-	str.append(SEPARATOR);
-	str.append(ToString<T>::toStr(t));
-	return str;
-}
-
-template<typename T, typename... Args>
-std::string ToString2(T t, Args... args)
-{
-	std::string str;
-	str.append(ToString<T>::toStr(t));
-	str.append(SEPARATOR);
-	str.append(ToString2(args...));
-	return str;
-}
 
 //====================================================================
 

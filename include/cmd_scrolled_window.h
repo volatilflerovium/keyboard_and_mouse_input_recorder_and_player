@@ -7,14 +7,14 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE. 
 * 
-* ExtScrolledWindow class                          				      *
+* CmdScrolledWindow class                          				      *
 *                                                                    *
 * Version: 1.0                                                       *
 * Date:    28-10-2024                                                *
 * Author:  Dan Machado                                               *
 **********************************************************************/
-#ifndef EXT_SCROLLED_WINDOW_H
-#define EXT_SCROLLED_WINDOW_H
+#ifndef CMD_SCROLLED_WINDOW_H
+#define CMD_SCROLLED_WINDOW_H
 
 #include "command_wrapper.h"
 
@@ -25,13 +25,16 @@
 class BasePanel;
 class BaseCommand;
 class InputCommand;
+class MouseBtnCommand;
 class CtrlCommand;
 
 //====================================================================
 
 template<typename T>
 struct HelperBuilder
-{};
+{
+	typedef InputCommandWrapper Wrapper;
+};
 
 template<>
 struct HelperBuilder<CtrlCommand>
@@ -40,12 +43,14 @@ struct HelperBuilder<CtrlCommand>
 };
 
 template<>
-struct HelperBuilder<InputCommand>
+struct HelperBuilder<MouseBtnCommand>
 {
-	typedef InputCommandWrapper Wrapper;
+	typedef MouseBtnCmdWrapper Wrapper;
 };
 
-class ExtScrolledWindow : public wxScrolledWindow
+//====================================================================
+
+class CmdScrolledWindow : public wxScrolledWindow
 {
 	public:
 		enum PlayMode
@@ -55,12 +60,12 @@ class ExtScrolledWindow : public wxScrolledWindow
 		};
 
 	public:
-		ExtScrolledWindow(wxWindow* parent, int Id, wxPoint Point, wxSize wSize);
+		CmdScrolledWindow(wxWindow* parent, int Id, wxPoint Point, wxSize wSize);
 
-		virtual ~ExtScrolledWindow();
+		virtual ~CmdScrolledWindow();
 
 		template<typename T>
-		void addCommand(BaseCommand* cmd, bool indentation);
+		void addCommand(T* cmd, bool indentation);
 
 		void addLoop(int times);
 		void closeLoop();
@@ -69,7 +74,7 @@ class ExtScrolledWindow : public wxScrolledWindow
 		void removeLast();
 		void clear();
 
-		bool getCommand(BaseCommand*& cmdPtr, const ExtScrolledWindow::PlayMode mode);
+		bool getCommand(BaseCommand*& cmdPtr, const CmdScrolledWindow::PlayMode mode);
 		void advance2End(size_t idx);
 
 		size_t size() const;
@@ -83,8 +88,6 @@ class ExtScrolledWindow : public wxScrolledWindow
 		bool loadDataFile(const char* fileName);
 
 		void lastCommandFailed();
-
-		void updateView(const BaseCommand* cmd);
 
 	private:
 		std::list<BasePanel*> m_cmdViewList;
@@ -111,35 +114,35 @@ class ExtScrolledWindow : public wxScrolledWindow
 
 //----------------------------------------------------------------------
 
-inline unsigned int ExtScrolledWindow::getCommandCount() const
+inline unsigned int CmdScrolledWindow::getCommandCount() const
 {
 	return m_commandCount;
 }
 
 //----------------------------------------------------------------------
 
-inline bool ExtScrolledWindow::swapUp()
+inline bool CmdScrolledWindow::swapUp()
 {
 	return swap(false);
 }
 
 //----------------------------------------------------------------------
 
-inline bool ExtScrolledWindow::swapDown()
+inline bool CmdScrolledWindow::swapDown()
 {
 	return swap(true);
 }
 
 //--------------------------------------------------------------------
 
-inline size_t ExtScrolledWindow::size() const
+inline size_t CmdScrolledWindow::size() const
 {
 	return m_cmdViewList.size();
 }
 
 //--------------------------------------------------------------------
 
-inline void ExtScrolledWindow::advance2End(size_t idx)
+inline void CmdScrolledWindow::advance2End(size_t idx)
 {
 	BaseCommand* cmdPtr;
 	for(size_t k=0; k<size(); k++){
@@ -153,7 +156,7 @@ inline void ExtScrolledWindow::advance2End(size_t idx)
 
 //--------------------------------------------------------------------
 
-inline void ExtScrolledWindow::addCommandPanel(BasePanel* panelPtr)
+inline void CmdScrolledWindow::addCommandPanel(BasePanel* panelPtr)
 {
 	updateScroll(panelPtr->getHeight());
 	m_cmdViewList.push_back(panelPtr);
@@ -162,7 +165,7 @@ inline void ExtScrolledWindow::addCommandPanel(BasePanel* panelPtr)
 //--------------------------------------------------------------------
 
 template<typename T>
-void ExtScrolledWindow::addCommand(BaseCommand* cmd, bool indentation)
+void CmdScrolledWindow::addCommand(T* cmd, bool indentation)
 {
 	Scroll(0, 0);
 

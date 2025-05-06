@@ -31,9 +31,14 @@ IMPLEMENT_APP(MyApp)
 
 bool MyApp::OnInit()
 {
+
 	RecorderPlayerKM* recorderPlayerGUI = new RecorderPlayerKM(wxT("kmRecorderAndPlayer"));
 
 	recorderPlayerGUI->Show(true);
+
+	if(wxApp::argc==2){
+		recorderPlayerGUI->CommandLineInputFile(wxApp::argv[1]);
+	}
 
 	appGUI=recorderPlayerGUI;
 
