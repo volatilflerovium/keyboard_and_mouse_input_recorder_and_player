@@ -82,6 +82,9 @@ No system libraries or system preferences are altered.
 Most AppImages run on recent versions of Arch Linux, CentOS, Debian, Fedora,
 openSUSE, Red Hat, Ubuntu, and other common desktop distributions.
 
+The AppImage run on any desktop on Xorg. For Ubuntu 24 intall libfuse2.
+Currently not working with Wayland.
+
 ## Examples
 
 The following examples are here only to illustrate the functionality of

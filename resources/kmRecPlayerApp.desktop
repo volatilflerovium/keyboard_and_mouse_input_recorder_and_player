@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Keyboard and Mouse Recorder Player
-Exec=kmRecPlayerApp
+Exec=env GDK_BACKEND=x11 kmRecPlayerApp
 Icon=kmRecPlayerIcon
 Categories=Graphics;

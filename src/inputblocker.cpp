@@ -27,9 +27,8 @@ InputBloker::InputBloker(wxWindow* parent, int transparency)
 	m_roi=nullptr;
 
 	Create(parent, wxID_ANY, "Input Blocker",
-	wxDefaultPosition, wxDefaultSize,
-	wxFRAME_NO_WINDOW_MENU
-	//wxFRAME_TOOL_WINDOW | wxNO_BORDER
+		wxDefaultPosition, wxDefaultSize,
+		wxDEFAULT_FRAME_STYLE | wxNO_BORDER
 	);
 
 	SetTransparent(transparency);
@@ -46,7 +45,10 @@ InputBloker::InputBloker(wxWindow* parent, int transparency)
 	});
 
 	wxRect rect=wxDisplay(this).GetGeometry();
-	
+
+	SetSize(wxSize(rect.GetWidth(), rect.GetHeight()));
+	SetMinSize(wxSize(rect.GetWidth(), rect.GetHeight()));
+
 	wxBoxSizer* boxWrapper = new wxBoxSizer(wxHORIZONTAL);
 	boxWrapper->SetMinSize(rect.GetWidth(), rect.GetHeight());
 	this->SetSizerAndFit(boxWrapper);

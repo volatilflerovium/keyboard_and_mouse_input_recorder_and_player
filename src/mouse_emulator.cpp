@@ -110,7 +110,7 @@ void MouseEmulatorI::go2Position(const int absX, const int absY, ClientMousePosi
 
 void MouseEmulatorI::select(uint absX, uint absY, uint width, uint height, ClientMousePosition getMousePosition)
 {
-	dbg(absX, " + ", width, " : ", absY, " + ", height);
+	//dbg(absX, " + ", width, " : ", absY, " + ", height);
 	go2Position(absX, absY, getMousePosition);
 	buttonDown(MOUSE_BUTTONS::LEFT);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));

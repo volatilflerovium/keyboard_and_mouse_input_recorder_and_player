@@ -81,9 +81,7 @@ static wxBitmapButton* makeButton(wxWindow* parent, const char* icon, int id=-1)
 
 RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 : wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition,
-		wxDefaultSize,
-		(wxDEFAULT_FRAME_STYLE & wxFRAME_NO_WINDOW_MENU) | wxCLOSE_BOX
-	)
+		wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxCLOSE_BOX)
 , m_settings(SettingsManager::getSettingManager())
 , m_timer(this, WX::TIMER)
 , m_playBitmapBundle(mkBitmapBundle("actions/media-playback-start-symbolic.symbolic.png"))
