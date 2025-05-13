@@ -44,7 +44,7 @@
 // Interface index depends on the order in configuration descriptor
 enum {
 	ITF_KEYBOARD = 0,
-	ITF_MOUSE = 1
+	ITF_ABS_MOUSE = 1
 };
 
 /* Blink pattern
@@ -60,7 +60,7 @@ enum  {
 
 #define KEYBOARD_START 0xE8
 #define KEYBOARD_END 0xE9
-#define MOUSE_START 0xEB
+#define MOUSE_MESSAGE 0xEB
 
 static bool kbrd=false;
 
@@ -72,7 +72,7 @@ void hid_task(void);
 
 void hid_job(void);
 
-void hid_task_cb(const uint8_t* buffer, const uint16_t buffer_size);
+void hid_task_cb(uint8_t* buffer, uint16_t buffer_size);
 
 //=====================================================================
 //--------------------------------------------------------------------+
@@ -103,7 +103,7 @@ int main(void)
 	start_udp_server(&hid_task_cb);
 
 	while(1){
-		server_poll();//
+		server_poll();
 		tud_task();
 		led_blinking_task();
 	}
@@ -136,14 +136,20 @@ struct Mouse_Data
 	int8_t scrollH;
 };
 
-void hid_task_cb(const uint8_t* buffer, const uint16_t buffer_size)
+union Converter
+{
+	uint8_t* m_data;
+	struct Mouse_Data* m_mouse;
+};
+
+void hid_task_cb(uint8_t* buffer, uint16_t buffer_size)
 {
 	// Remote wakeup
 	if(tud_suspended()){
 		tud_remote_wakeup();
 	}
 
-	if(!tud_hid_n_ready(ITF_KEYBOARD) && !tud_hid_n_ready(ITF_MOUSE)){
+	if(!tud_hid_n_ready(ITF_KEYBOARD) && !tud_hid_n_ready(ITF_ABS_MOUSE)){
 		send_msg("Failed");
 		return;
 	}
@@ -176,21 +182,15 @@ void hid_task_cb(const uint8_t* buffer, const uint16_t buffer_size)
 			keycode[key_count++]=buffer[i];
 		}
 	}
-	else if(buffer[0]==MOUSE_START){
-		if(buffer_size<8){
-			uint8_t btn=buffer[1];
-			const int8_t* buff=(const int8_t*) buffer;
-			tud_hid_n_mouse_report(ITF_MOUSE, 0, btn, buff[2], buff[3], buff[4], buff[5]);
-			kbrd=true;
-		}
-		else if(buffer_size==8){
-			struct Mouse_Data mouse;
-			memcpy((void*)&mouse, (const void*)buffer, 8);
-			tud_hid_n_abs_mouse_report(ITF_MOUSE, 0, mouse.btns, mouse.absX, mouse.absY, mouse.scrollV, mouse.scrollH);
+	else if(buffer[0]==MOUSE_MESSAGE){
+		union Converter convt;
+		convt.m_data=buffer;
 
-			kbrd=true;
-			send_msg("position: (%d, %d)", mouse.absX, mouse.absY);
-		}
+		tud_hid_n_abs_mouse_report(ITF_ABS_MOUSE, 0, convt.m_mouse->btns, convt.m_mouse->absX, convt.m_mouse->absY, convt.m_mouse->scrollV, convt.m_mouse->scrollH);
+			
+		//send_msg("position: (%d, %d)", convt.m_mouse->absX, convt.m_mouse->absY);
+
+		kbrd=true;
 	}
 }
 

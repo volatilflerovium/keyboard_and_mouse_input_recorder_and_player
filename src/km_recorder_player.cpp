@@ -14,8 +14,6 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "km_recorder_player.h"
-
-
 #include "wx_textctrl.h"
 #include "wxstring_array.h"
 #include "utilities.h"
@@ -428,19 +426,11 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	int hy=rect.GetHeight()-2;
 	m_getFocusCmd=[this, wx, hy](){
 		/*
-		s_MouseEmulator->go2Position(wx, hy, [](int& pX, int& pY){
-			wxPoint mousePosition=wxGetMousePosition();
-			pX=mousePosition.x;
-			pY=mousePosition.y;
-		});
+		s_MouseEmulator->go2Position(wx, hy);
 
 		s_MouseEmulator->clickLeftBtn();
 
-		s_MouseEmulator->go2Position(m_click.x, m_click.y, [](int& pX, int& pY){
-			wxPoint mousePosition=wxGetMousePosition();
-			pX=mousePosition.x;
-			pY=mousePosition.y;
-		});
+		s_MouseEmulator->go2Position(m_click.x, m_click.y);
 
 		s_MouseEmulator->clickLeftBtn();// */
 	};
@@ -473,58 +463,6 @@ RecorderPlayerKM::~RecorderPlayerKM()
 
 	// remove unused images
 	removeOrphanImgs(m_fileDropDown);
-	#if 0
-	std::vector<std::pair<std::string, bool> > imgVector;
-
-	std::error_code ec;
-	std::string imageFile;
-	std::filesystem::directory_iterator dirIterator(getImgPath(), ec);
-	if(ec.value()==0){
-		for(auto& dirEntry : dirIterator){
-			if(dirEntry.is_regular_file()){
-				imageFile=dirEntry.path().filename().c_str();
-				if(imageFile[0]!='.'){
-					imgVector.push_back({imageFile.c_str(), false});
-				}
-			}
-		}
-	}
-	
-	const std::string pattern=".png";
-	wxString fileName;
-
-	for(unsigned int i=0; i<m_fileDropDown->GetCount(); i++){
-		fileName=m_fileDropDown->GetString(i);
-		std::ifstream commandFiles;
-		
-		commandFiles.open(getFilePath(fileName.mb_str()), std::ifstream::in);
-		if(commandFiles.is_open()){
-	
-			std::string commandLine;
-			std::string img;
-			while(std::getline(commandFiles, commandLine)){
-				size_t pos=commandLine.find(pattern);
-				if(pos!=std::string::npos){
-					size_t pos0=commandLine.find("\":\"", pos-25);
-					std::string imageName=commandLine.substr(pos0+3, pos+1-pos0);
-					for(auto& data : imgVector){
-						if(data.first==imageName){
-							data.second=true;
-							break;
-						}
-					}
-				}
-			}
-			commandFiles.close();
-		}
-	}
-
-	for(auto& data : imgVector){
-		if(!data.second){
-			removeImage(data.first);
-		}
-	}
-	#endif
 
 	wxDELETE(m_roiOptions);
    wxDELETE(m_selectWindowPopup);
@@ -806,10 +744,11 @@ void RecorderPlayerKM::addCommand()
 	m_dataChanged++;
 	m_playBtn->Enable();
 	m_saveBtn->Enable();
-
+	
 	getFirstIndex();
 	if(m_commandInputMode!=CommandInputMode::QUIET){
 		m_playStatus=PlayStatus::PLAYING;
+		s_MouseEmulator->go2Position(wxDisplay().GetGeometry().GetWidth(), wxDisplay().GetGeometry().GetHeight());
 		RunCommands(CmdScrolledWindow::PlayMode::DEMO);
 	}
 	m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_cmdScrolledWindow->getCommandCount()));
@@ -900,10 +839,6 @@ void RecorderPlayerKM::OnSetRoiType(wxCommandEvent& evt)
 
 	if(selection==SELECT){
 		if(m_selectionRect.isNoTrivial()){
-
-			dbg(m_selectionRect.m_posX, " ", m_selectionRect.m_posY, " ",
-				m_selectionRect.m_width, " ", m_selectionRect.m_height);
-
 			addCommand(MouseSelectCommand::Builder("Mouse select",
 				m_settings.getTimePadding(),
 				m_selectionRect.m_posX, m_selectionRect.m_posY,
@@ -1053,8 +988,8 @@ void RecorderPlayerKM::mkMenu(bool allowScreenshot, bool fullMenu)
 			menu.Append(WX::MENU::DO_RIGHT_CLICK, wxT("Right Click Here"));
 			menu.Append(WX::MENU::START_ROI, wxT("Select Area"));
 			menu.Append(WX::MENU::START_DRAGGING, wxT("Start Dragging"));
-			menu.Append(WX::MENU::DRAG_HERE, wxT("Drag/Drop Here"));
-				menu.Enable(WX::MENU::DRAG_HERE, false);
+			/*menu.Append(WX::MENU::DRAG_HERE, wxT("Drag/Drop Here"));
+				menu.Enable(WX::MENU::DRAG_HERE, false);// */
 			menu.Append(WX::MENU::DISPLAY_KBOARD, wxT("Text and Keyboard Input"));
 			menu.Append(WX::MENU::SCREENSHOT_CMD, wxT("Take Screenshot"));
 				menu.Enable(WX::MENU::SCREENSHOT_CMD, allowScreenshot && m_fullFunctionality==SystemStatus::OK);
@@ -1176,7 +1111,6 @@ void RecorderPlayerKM::OnRunCmdTimer(wxTimerEvent& event)
 			}
 		}
 		else{
-			dbg("waiting");
 			m_timer.StartOnce(m_currentRunningCmd->wait());
 		}
 	}
@@ -1531,6 +1465,7 @@ void RecorderPlayerKM::OnControlBtns(wxCommandEvent& event)
 						if(m_cmdScrolledWindow->getCommandCount()>0){
 							m_inputBlocker->clearBackground();
 							m_playStatus=PlayStatus::PLAYING;
+							s_MouseEmulator->go2Position(wxDisplay().GetGeometry().GetWidth(), wxDisplay().GetGeometry().GetHeight());
 							RunCommands(CmdScrolledWindow::PlayMode::DEMO);
 						}
 					}

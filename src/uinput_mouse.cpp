@@ -25,13 +25,16 @@
 #include <errno.h>
 #include <linux/uinput.h>
 
-#define MOUSE_NAME "AutomaticTester mouse"
+#include <wx/display.h>
 
+#define MOUSE_NAME "kmRecorderPlayer mouse"
 
 //====================================================================
 
 UinputMouse::UinputMouse()
 :m_fd(-1)
+, c_displayWidth(wxDisplay().GetGeometry().GetWidth())
+, c_displayHeight(wxDisplay().GetGeometry().GetHeight())
 {
 	reload();
 }
@@ -59,9 +62,32 @@ bool UinputMouse::reload()
 			ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
 			ioctl(m_fd, UI_SET_KEYBIT, BTN_LEFT);
 			ioctl(m_fd, UI_SET_KEYBIT, BTN_RIGHT);
-			ioctl(m_fd, UI_SET_EVBIT, EV_REL);
-			ioctl(m_fd, UI_SET_RELBIT, REL_X);
-			ioctl(m_fd, UI_SET_RELBIT, REL_Y);
+
+			ioctl(m_fd, UI_SET_EVBIT, EV_ABS);
+			ioctl(m_fd, UI_SET_ABSBIT, ABS_X);
+			ioctl(m_fd, UI_SET_ABSBIT, ABS_Y);
+
+			uinput_abs_setup abs_X;
+			abs_X.code=0;
+			abs_X.absinfo.value=0;
+			abs_X.absinfo.minimum=0;
+			abs_X.absinfo.maximum=c_displayWidth;
+			abs_X.absinfo.fuzz=0;
+			abs_X.absinfo.flat=0;
+			abs_X.absinfo.resolution=0;
+
+			ioctl(m_fd, UI_ABS_SETUP, &abs_X);
+
+			uinput_abs_setup abs_Y;
+			abs_Y.code=1;
+			abs_Y.absinfo.value=0;
+			abs_Y.absinfo.minimum=0;
+			abs_Y.absinfo.maximum=c_displayHeight;
+			abs_Y.absinfo.fuzz=0;
+			abs_Y.absinfo.flat=0;
+			abs_Y.absinfo.resolution=0;
+
+			ioctl(m_fd, UI_ABS_SETUP, &abs_Y);
 
 			init(MOUSE_NAME);
 		}
@@ -100,26 +126,10 @@ bool UinputMouse::emit(int type, int code, int val)
 
 //--------------------------------------------------------------------
 
-void UinputMouse::buttonDown(MOUSE_BUTTONS button)
+void UinputMouse::setPosition(const int absX, const int absY)
 {
-	emit(EV_KEY, getMouseButton(button), 1);
-	emit(EV_SYN, SYN_REPORT, 0);
-}
-
-//--------------------------------------------------------------------
-
-void UinputMouse::buttonUp(MOUSE_BUTTONS button)
-{
-	emit(EV_KEY, getMouseButton(button), 0);
-	emit(EV_SYN, SYN_REPORT, 0);
-}
-
-//--------------------------------------------------------------------
-
-void UinputMouse::setPosition(const int dx, const int dy)
-{
-	emit(EV_REL, REL_X, dx);
-	emit(EV_REL, REL_Y, dy);
+	emit(EV_ABS, ABS_X, absX);
+	emit(EV_ABS, ABS_Y, absY);
 	emit(EV_SYN, SYN_REPORT, 0);
 	std::this_thread::sleep_for(std::chrono::milliseconds(15));
 }

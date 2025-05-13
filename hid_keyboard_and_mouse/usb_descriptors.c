@@ -78,7 +78,7 @@ uint8_t const desc_hid_report1[] =
 
 uint8_t const desc_hid_report2[] =
 {
-  TUD_HID_REPORT_DESC_MOUSE()
+  TUD_HID_REPORT_DESC_ABSMOUSE()
 };
 
 // Invoked when received GET HID REPORT DESCRIPTOR
@@ -94,7 +94,6 @@ uint8_t const * tud_hid_descriptor_report_cb(uint8_t itf)
   {
     return desc_hid_report2;
   }
-
   return NULL;
 }
 

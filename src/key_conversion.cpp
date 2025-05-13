@@ -84,7 +84,7 @@ uint KeyConversion::getKeyCode(SPKEYS keyCode, ConvCode _getKeyCode)
 					return _getKeyCode(KEY_F12, HID_KEY_F12);
 				break;
 				case SPKEYS::SYSRQ:
-					return _getKeyCode(KEY_SYSRQ, HID_KEY_SYSREQ_ATTENTION); //<---- check
+					return _getKeyCode(KEY_SYSRQ, HID_KEY_PRINT_SCREEN);
 				break;
 				case SPKEYS::BACKSPACE:
 					return _getKeyCode(KEY_BACKSPACE, HID_KEY_BACKSPACE);

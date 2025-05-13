@@ -20,6 +20,8 @@
 #include "error_reporting.h"
 #include <functional>
 
+#define MAX_DISPLAY_SIZE 0x7FFF /* 32767 This is the value tinyusb provides */
+
 //====================================================================
 
 class MouseEmulatorI : public ErrorReporting
@@ -43,36 +45,37 @@ class MouseEmulatorI : public ErrorReporting
 		void clickRightBtn(uint pressForMs=0);
 
 		/*
-		 *	Move mouse to the relative position (dy, dy) in small steps
+		 *	Move mouse to the absolute position (endX, endY) in small steps
 		 * */
-		void move(const int dx, const int dy);
+		void moveFromTo(const int startX, const int startY, const int endX, const int endY);
 
 		/*
-		 * Will move the mouse to the absolute position (absX, absY)
+		 * Move the mouse to the absolute position (absX, absY)
 		 * */
-		virtual void go2Position(const int absX, const int absY, ClientMousePosition getMousePosition);
+		virtual void go2Position(const int absX, const int absY);
 
 		/*
 		 * Select rectangle: (absX, absY, width, height)
 		 * Note that width and height can be negative values
 		 * */
-		void select(uint absX, uint absY, uint width, uint height, ClientMousePosition getMousePosition);
+		void select(uint absX, uint absY, uint width, uint height);
 
 		/*
 		 * Drag the mouse from absolute position (startX, startY)
 		 * to absolute position (endX, endY)
 		 * */
-		void drag(uint startX, uint startY, uint endX, uint endY, ClientMousePosition getMousePosition);
+		void drag(uint startX, uint startY, uint endX, uint endY);
 		
 		//void scroll(const int x, const int y);
 
 	private:
-		// for some reason as the values are bigger there is some lost of presicion
 		enum STEP
 		{
 			LOW=3,
 			THR=LOW+1,
 		};
+
+		void clickBtn(const MOUSE_BUTTONS btn, uint pressForMs);
 
 		/*
 		 * Move the mouse to the relative position (dx, dy)
@@ -80,8 +83,6 @@ class MouseEmulatorI : public ErrorReporting
 		virtual void setPosition(const int dx, const int dy)=0;
 		virtual void buttonDown(MOUSE_BUTTONS btn)=0;
 		virtual void buttonUp(MOUSE_BUTTONS btn)=0;
-
-		void moveAbs(const int absX, const int absY, ClientMousePosition getMousePosition);
 };
 
 //--------------------------------------------------------------------
@@ -93,6 +94,20 @@ inline bool MouseEmulatorI::reload()
 }
 
 //--------------------------------------------------------------------
+
+inline void MouseEmulatorI::clickLeftBtn(uint pressForMs)
+{
+	clickBtn(MOUSE_BUTTONS::LEFT, pressForMs);
+}
+
+//--------------------------------------------------------------------
+
+inline void MouseEmulatorI::clickRightBtn(uint pressForMs)
+{
+	clickBtn(MOUSE_BUTTONS::RIGHT, pressForMs);
+}
+
+//====================================================================
 
 class DummyMouse : public MouseEmulatorI
 {
@@ -108,6 +123,5 @@ class DummyMouse : public MouseEmulatorI
 };
 
 //====================================================================
-
 
 #endif

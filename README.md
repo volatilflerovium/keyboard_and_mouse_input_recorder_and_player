@@ -49,6 +49,7 @@ the following dependencies:
 
 - imagemagick
 - x11-utils
+- For Ubuntu 24 intall libfuse2
 
 ## Features
 
@@ -79,11 +80,12 @@ in your system.
 AppImages are single-file applications that run on most Linux distributions.
 Download it, make it executable, and run! No need to install.
 No system libraries or system preferences are altered.
-Most AppImages run on recent versions of Arch Linux, CentOS, Debian, Fedora,
-openSUSE, Red Hat, Ubuntu, and other common desktop distributions.
 
-The AppImage run on any desktop on Xorg. For Ubuntu 24 intall libfuse2.
-Currently not working with Wayland.
+Most AppImages run on recent versions of Arch Linux, CentOS, Debian, Fedora,
+openSUSE, Red Hat, Ubuntu, and other common desktop distributions running with x11.
+
+Some functionalities of kmRecorderAndPlayer relay on x11 (input on specific window,
+window screenshot), therefore it is not working under Wayland.
 
 ## Examples
 

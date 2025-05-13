@@ -79,11 +79,7 @@ static SimpleImageDifference* GetImageDifference()
 
 void MouseLeftClick(int x, int y)
 {
-	s_MouseEmulator->go2Position(x, y, [](int& pX, int& pY){
-		wxPoint mousePosition=wxGetMousePosition();
-		pX=mousePosition.x;
-		pY=mousePosition.y;
-	});
+	s_MouseEmulator->go2Position(x, y);
 
 	s_MouseEmulator->clickLeftBtn();
 }
@@ -291,11 +287,8 @@ MoveMouseCommand::MoveMouseCommand(const char* description, int wait, int x, int
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_x, m_y)){
 				m_statusCode=ExitCode::OK;
-				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY, [](int& pX, int& pY){
-					wxPoint mousePosition=wxGetMousePosition();
-					pX=mousePosition.x;
-					pY=mousePosition.y;
-				});
+				//dbg("move command to: ", m_absoluteX, " : ", m_absoluteY);
+				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY);
 			}
 		}
 	};
@@ -343,12 +336,7 @@ MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int 
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_x, m_y)){
 				m_statusCode=ExitCode::OK;
-				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY, [](int& pX, int& pY){
-					wxPoint mousePosition=wxGetMousePosition();
-					pX=mousePosition.x;
-					pY=mousePosition.y;
-				});
-
+				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY);
 				s_MouseEmulator->clickLeftBtn(m_pressForMs);
 			}
 		}
@@ -387,11 +375,8 @@ MouseRightBtnCommand::MouseRightBtnCommand(const char* description, int wait, in
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_x, m_y)){
 				m_statusCode=ExitCode::OK;
-				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY, [](int& pX, int& pY){
-					wxPoint mousePosition=wxGetMousePosition();
-					pX=mousePosition.x;
-					pY=mousePosition.y;
-				});
+				//dbg("move to: ", m_absoluteX, " : ", m_absoluteY);
+				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY);
 
 				s_MouseEmulator->clickRightBtn(m_pressForMs);
 			}
@@ -436,11 +421,7 @@ MouseSelectCommand::MouseSelectCommand(const char* description, int wait, uint p
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_posX, m_posY)){
 				m_statusCode=ExitCode::OK;
-				s_MouseEmulator->select(m_absoluteX, m_absoluteY, m_width, m_height, [](int& pX, int& pY){
-					wxPoint mousePosition=wxGetMousePosition();
-					pX=mousePosition.x;
-					pY=mousePosition.y;
-				});
+				s_MouseEmulator->select(m_absoluteX, m_absoluteY, m_width, m_height);
 			}
 		}
 		MouseCmdExitPosition::setExitPosition();
@@ -491,11 +472,7 @@ MouseDragCommand::MouseDragCommand(const char* description, int wait, int startX
 					int absEndX=m_absoluteX;
 					int absEndY=m_absoluteY;
 
-					s_MouseEmulator->drag(absStartX, absStartY, absEndX, absEndY, [](int& pX, int& pY){
-						wxPoint mousePosition=wxGetMousePosition();
-						pX=mousePosition.x;
-						pY=mousePosition.y;
-					});
+					s_MouseEmulator->drag(absStartX, absStartY, absEndX, absEndY);
 				}
 			}
 		}
@@ -528,11 +505,7 @@ MouseDragCommand::MouseDragCommand(const char* description, int wait, int endX, 
 				int startX=MouseCmdExitPosition::s_x;
 				int startY=MouseCmdExitPosition::s_y;
 
-				s_MouseEmulator->drag(startX, startY, m_absoluteX, m_absoluteY, [](int& pX, int& pY){
-					wxPoint mousePosition=wxGetMousePosition();
-					pX=mousePosition.x;
-					pY=mousePosition.y;
-				});
+				s_MouseEmulator->drag(startX, startY, m_absoluteX, m_absoluteY);
 			}
 		}
 		MouseCmdExitPosition::setExitPosition();
@@ -562,27 +535,6 @@ void MouseDragCommand::print(std::ostream& outputStream)
 	json.dump(outputStream);
 }
 
-/*
-void MouseDragCommand::print(std::ostream& outputStream)
-{
-		//return ToString2(ID, m_description, m_run, -1, -1, m_endX, m_endY, m_windowName);
-	int ID=static_cast<int>(CommandTypes::MouseDrag);
-	SimpleSerialization json;
-	
-	json.ToString(
-		"ID", ID,
-		"description", m_description,
-		"run", m_run,
-		"startX", -1,
-		"startY", -1,
-		"endX", m_endX,
-		"endY", m_endY,
-		"windowName", m_windowName,
-		"wait", m_wait
-		);
-	json.dump(outputStream);
-}
-// */
 //====================================================================
 
 CtrlCommand::CtrlCommand(const char* description, const std::string& baseImageName, const char* roiStr, const char* windowName, bool removeImg)
@@ -683,8 +635,6 @@ void CtrlCommand::updateBaseImg(const char* baseImg, const char* roiStr)
 
 bool CtrlCommand::ready()
 {
-	dbg("ctrl cmd ready");
-
 	bool result=m_cbk();
 	if(!m_similarity){
 		result=!result;
@@ -709,19 +659,6 @@ bool CtrlCommand::ready()
 void CtrlCommand::print(std::ostream& outputStream)
 {
 	m_cleanImg=false;
-	/*outputStream<<ToString2(
-		static_cast<int>(CommandTypes::Ctrl),
-		m_description,
-		m_run,
-		m_baseImageName,
-		m_roiStr,
-		m_windowName,
-		m_similarity,
-		m_threshold,
-		m_sensitivity,
-		m_strictRun,
-		getTimeout()
-	);*/
 
 	SimpleSerialization json;
 	

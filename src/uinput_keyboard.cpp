@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define KEYBOARD_NAME "AutomaticTester keyboard"
+#define KEYBOARD_NAME "kmRecorderPlayer keyboard"
 
 //====================================================================
 

@@ -227,4 +227,23 @@ bool isHex(const char* str);
 
 //====================================================================
 
+inline bool isX11()
+{
+	static bool isSet=false;
+	static bool isWayland=false;
+	if(!isSet){
+		isSet=true;
+		bool a=false;
+		exeCommand<64>(
+			"loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type | grep x11",
+			[&a](const std::string& output){
+				a=output.length()==0;
+		});
+		isWayland=a;
+	}
+	return !isWayland;
+}
+
+//====================================================================
+
 #endif

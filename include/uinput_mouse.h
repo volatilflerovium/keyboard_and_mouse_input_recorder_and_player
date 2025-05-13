@@ -18,6 +18,7 @@
 
 #include "mouse_emulator.h"
 
+#include <string>
 #include <linux/uinput.h>
 
 //====================================================================
@@ -34,6 +35,8 @@ class UinputMouse : public MouseEmulatorI
 		uinput_setup m_usetup={0};
 		input_event m_inputEvent={0};
 		int m_fd;
+		const uint16_t c_displayWidth;
+		const uint16_t c_displayHeight;
 
 		bool emit(int type, int code, int val);
 		void init(const char* deviceName);
@@ -41,9 +44,9 @@ class UinputMouse : public MouseEmulatorI
 		int getMouseButton(const MOUSE_BUTTONS btn);
 
 		/*
-		 * Move the mouse to the relative position (dx, dy)
+		 * Move the mouse to the absolute position (absx, absy)
 		 * */
-		virtual void setPosition(const int dx, const int dy) override;
+		virtual void setPosition(const int absX, const int absY) override;
 
 		virtual void buttonDown(MOUSE_BUTTONS btn) override;
 		virtual void buttonUp(MOUSE_BUTTONS btn) override;
@@ -57,6 +60,22 @@ inline int UinputMouse::getMouseButton(const MOUSE_BUTTONS btn)
 		return BTN_LEFT;
 	}
 	return BTN_RIGHT;
+}
+
+//--------------------------------------------------------------------
+
+inline void UinputMouse::buttonDown(MOUSE_BUTTONS button)
+{
+	emit(EV_KEY, getMouseButton(button), 1);
+	emit(EV_SYN, SYN_REPORT, 0);
+}
+
+//--------------------------------------------------------------------
+
+inline void UinputMouse::buttonUp(MOUSE_BUTTONS button)
+{
+	emit(EV_KEY, getMouseButton(button), 0);
+	emit(EV_SYN, SYN_REPORT, 0);
 }
 
 //--------------------------------------------------------------------
