@@ -41,22 +41,22 @@ class UinputMouse : public MouseEmulatorI
 		bool emit(int type, int code, int val);
 		void init(const char* deviceName);
 
-		int getMouseButton(const MOUSE_BUTTONS btn);
+		int getMouseButton(const MOUSE_BTN btn);
 
 		/*
 		 * Move the mouse to the absolute position (absx, absy)
 		 * */
 		virtual void setPosition(const int absX, const int absY) override;
 
-		virtual void buttonDown(MOUSE_BUTTONS btn) override;
-		virtual void buttonUp(MOUSE_BUTTONS btn) override;
+		virtual void buttonDown(MOUSE_BTN btn) override;
+		virtual void buttonUp(MOUSE_BTN btn) override;
 };
 
 //--------------------------------------------------------------------
 
-inline int UinputMouse::getMouseButton(const MOUSE_BUTTONS btn)
+inline int UinputMouse::getMouseButton(const MOUSE_BTN btn)
 {
-	if(btn==MOUSE_BUTTONS::LEFT){
+	if(btn==MOUSE_BTN::LEFT){
 		return BTN_LEFT;
 	}
 	return BTN_RIGHT;
@@ -64,7 +64,7 @@ inline int UinputMouse::getMouseButton(const MOUSE_BUTTONS btn)
 
 //--------------------------------------------------------------------
 
-inline void UinputMouse::buttonDown(MOUSE_BUTTONS button)
+inline void UinputMouse::buttonDown(MOUSE_BTN button)
 {
 	emit(EV_KEY, getMouseButton(button), 1);
 	emit(EV_SYN, SYN_REPORT, 0);
@@ -72,7 +72,7 @@ inline void UinputMouse::buttonDown(MOUSE_BUTTONS button)
 
 //--------------------------------------------------------------------
 
-inline void UinputMouse::buttonUp(MOUSE_BUTTONS button)
+inline void UinputMouse::buttonUp(MOUSE_BTN button)
 {
 	emit(EV_KEY, getMouseButton(button), 0);
 	emit(EV_SYN, SYN_REPORT, 0);

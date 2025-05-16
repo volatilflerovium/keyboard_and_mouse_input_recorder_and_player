@@ -25,7 +25,7 @@
 
 //====================================================================
 
-void MouseEmulatorI::clickBtn(const MOUSE_BUTTONS btn, uint pressForMs)
+void MouseEmulatorI::clickBtn(const MOUSE_BTN btn, uint pressForMs)
 {
 	buttonDown(btn);
 	if(pressForMs>0){
@@ -33,6 +33,15 @@ void MouseEmulatorI::clickBtn(const MOUSE_BUTTONS btn, uint pressForMs)
 	}
 	buttonUp(btn);
 	std::this_thread::sleep_for(std::chrono::milliseconds(15));
+}
+
+//--------------------------------------------------------------------
+
+void MouseEmulatorI::doubleClickBtn(const MOUSE_BTN btn, uint threshold)
+{
+	clickBtn(btn, 20);
+	std::this_thread::sleep_for(std::chrono::milliseconds(threshold/2));
+	clickBtn(btn, 20);
 }
 
 //--------------------------------------------------------------------
@@ -88,10 +97,10 @@ void MouseEmulatorI::select(uint absX, uint absY, uint width, uint height)
 void MouseEmulatorI::drag(uint startX, uint startY, uint endX, uint endY)
 {
 	go2Position(startX, startY);
-	buttonDown(MOUSE_BUTTONS::LEFT);
+	buttonDown(MOUSE_BTN::LEFT);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	moveFromTo(startX, startY, endX, endY);
-	buttonUp(MOUSE_BUTTONS::LEFT);
+	buttonUp(MOUSE_BTN::LEFT);
 }
 
 //====================================================================

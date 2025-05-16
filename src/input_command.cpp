@@ -33,6 +33,7 @@
 #include "cstr_split.h"
 #include "keyboard_emulator.h"
 #include "mouse_emulator.h"
+#include "settings_manager.h"
 
 #include "debug_utils.h"
 
@@ -81,7 +82,7 @@ void MouseLeftClick(int x, int y)
 {
 	s_MouseEmulator->go2Position(x, y);
 
-	s_MouseEmulator->clickLeftBtn();
+	s_MouseEmulator->clickBtn(MOUSE_BTN::LEFT);
 }
 
 //====================================================================
@@ -317,18 +318,13 @@ void MoveMouseCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-MouseBtnCommand::MouseBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
+MouseBtnCommand::MouseBtnCommand(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_x(x)
 , m_y(y)
 , m_pressForMs(0)
-{};
-
-//====================================================================
-
-MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
-:MouseBtnCommand(description, wait, x, y, windowName)
+, m_btn(btn)
 {
 	m_cmd=[this](){
 		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
@@ -337,7 +333,7 @@ MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int 
 			if(isTargetValid(m_x, m_y)){
 				m_statusCode=ExitCode::OK;
 				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY);
-				s_MouseEmulator->clickLeftBtn(m_pressForMs);
+				s_MouseEmulator->clickBtn(m_btn, m_pressForMs);
 			}
 		}
 		MouseCmdExitPosition::setExitPosition();
@@ -346,9 +342,9 @@ MouseLeftBtnCommand::MouseLeftBtnCommand(const char* description, int wait, int 
 
 //--------------------------------------------------------------------
 
-void MouseLeftBtnCommand::print(std::ostream& outputStream)
+void MouseBtnCommand::print(std::ostream& outputStream)
 {
-	int ID=static_cast<int>(CommandTypes::MouseLeftBtn);		
+	int ID=static_cast<int>(CommandTypes::MouseBtn);		
 	SimpleSerialization json;
 	
 	json.ToString(
@@ -357,6 +353,7 @@ void MouseLeftBtnCommand::print(std::ostream& outputStream)
 		"run", m_run,
 		"x", m_x,
 		"y", m_y,
+		"btn", static_cast<int>(m_btn),
 		"pressFor", m_pressForMs, 
 		"windowName", m_windowName,
 		"wait", m_wait
@@ -366,8 +363,12 @@ void MouseLeftBtnCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-MouseRightBtnCommand::MouseRightBtnCommand(const char* description, int wait, int x, int y, const char* windowName)
-:MouseBtnCommand(description, wait, x, y, windowName)
+DoubleClickCommand::DoubleClickCommand(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
+:InputCommand(description, wait)
+, WindowOffset(windowName)
+, m_x(x)
+, m_y(y)
+, m_btn(btn)
 {
 	m_cmd=[this](){
 		m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
@@ -375,21 +376,19 @@ MouseRightBtnCommand::MouseRightBtnCommand(const char* description, int wait, in
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_x, m_y)){
 				m_statusCode=ExitCode::OK;
-				//dbg("move to: ", m_absoluteX, " : ", m_absoluteY);
 				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY);
-
-				s_MouseEmulator->clickRightBtn(m_pressForMs);
+				s_MouseEmulator->doubleClickBtn(m_btn, SettingsManager::getSettingManager().getDoubleClick());
 			}
 		}
-		MouseCmdExitPosition::setExitPosition();
+		//MouseCmdExitPosition::setExitPosition();
 	};
 }
 
 //--------------------------------------------------------------------
 
-void MouseRightBtnCommand::print(std::ostream& outputStream)
+void DoubleClickCommand::print(std::ostream& outputStream)
 {
-	int ID=static_cast<int>(CommandTypes::MouseRightBtn);
+	int ID=static_cast<int>(CommandTypes::DoubleClick);		
 	SimpleSerialization json;
 	
 	json.ToString(
@@ -398,7 +397,7 @@ void MouseRightBtnCommand::print(std::ostream& outputStream)
 		"run", m_run,
 		"x", m_x,
 		"y", m_y,
-		"pressFor", m_pressForMs, 
+		"btn", static_cast<int>(m_btn),
 		"windowName", m_windowName,
 		"wait", m_wait
 		);
@@ -435,7 +434,7 @@ void MouseSelectCommand::print(std::ostream& outputStream)
 {
 	int ID=static_cast<int>(CommandTypes::MouseSelection);
 	SimpleSerialization json;
-	
+
 	json.ToString(
 		"ID", ID,
 		"description", m_description,

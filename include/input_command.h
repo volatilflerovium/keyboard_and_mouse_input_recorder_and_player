@@ -18,8 +18,8 @@
 * class UnicodeCommand                                               *
 * class ShortcutCommand                                              *
 * class MoveMouseCommand                                             *
-* class MouseLeftBtnCommand                                          *
-* class MouseRightBtnCommand                                         *
+* class MouseBtnCommand                                              *
+* class DoubleClickCommand                                           *
 * class MouseSelectCommand                                           *
 * class MouseSelectCommand2                                          *
 * class CtrlCommand                                                  *
@@ -32,6 +32,9 @@
 #define INPUT_COMMAND_H
 #include "key_conversion.h"
 #include "utilities.h"
+
+#include "mouse_emulator.h"
+
 #include "debug_utils.h"
 
 #include <iostream>
@@ -52,13 +55,14 @@ enum class CommandTypes
 	KeyboardLine,
 	KeyboardText,
 	MouseMove,
-	MouseLeftBtn,
-	MouseRightBtn,
+	MouseBtn,
+	MouseRightBtn, // not in use
 	MouseSelection,
 	Screenshot,// alias for Ctrl
 	Unicode,
 	Shortcut,
 	MouseDrag,
+	DoubleClick,
 };
 
 enum class CommandInputTypes
@@ -420,9 +424,18 @@ class MoveMouseCommand : public InputCommand, public WindowOffset
 class MouseBtnCommand : public InputCommand, public WindowOffset
 {
 	public:
-		MouseBtnCommand(const char* description, int wait, int x, int y, const char* windowName);
+		MouseBtnCommand(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName);
 
 		virtual ~MouseBtnCommand()=default;
+
+		static MouseBtnCommand* Builder(const char* description, int wait, int x, int y, MOUSE_BTN btn, uint pressForMs, const char* windowName)
+		{
+			auto cmd=new MouseBtnCommand(description, wait, x, y, btn, windowName);
+			cmd->setPressFor(pressForMs);
+			return cmd;
+		}
+
+		virtual void print(std::ostream& outputStream) override;
 
 		virtual int getExitCode() const override
 		{
@@ -449,43 +462,43 @@ class MouseBtnCommand : public InputCommand, public WindowOffset
 		int m_y;
 		uint m_statusCode;
 		uint m_pressForMs;
-};
-
-
-class MouseLeftBtnCommand : public MouseBtnCommand
-{
-	public:
-		MouseLeftBtnCommand(const char* description, int wait, int x, int y, const char* windowName);
-
-		virtual ~MouseLeftBtnCommand()=default;
-
-		static MouseLeftBtnCommand* Builder(const char* description, int wait, int x, int y, uint pressForMs, const char* windowName)
-		{
-			auto cmd=new MouseLeftBtnCommand(description, wait, x, y, windowName);
-			cmd->setPressFor(pressForMs);
-			return cmd;
-		}
-
-		virtual void print(std::ostream& outputStream) override;
+		MOUSE_BTN m_btn;
 };
 
 //====================================================================
 
-class MouseRightBtnCommand : public MouseBtnCommand
+class DoubleClickCommand : public InputCommand, public WindowOffset
 {
 	public:
-		MouseRightBtnCommand(const char* description, int wait, int x, int y, const char* windowName);
+		DoubleClickCommand(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName);
 
-		virtual ~MouseRightBtnCommand()=default;
+		virtual ~DoubleClickCommand()=default;
 
-		static MouseRightBtnCommand* Builder(const char* description, int wait, int x, int y, uint pressForMs, const char* windowName)
+		static DoubleClickCommand* Builder(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
 		{
-			auto cmd=new MouseRightBtnCommand(description, wait, x, y, windowName);
-			cmd->setPressFor(pressForMs);
+			auto cmd=new DoubleClickCommand(description, wait, x, y, btn, windowName);
 			return cmd;
 		}
+
 		virtual void print(std::ostream& outputStream) override;
+
+		virtual int getExitCode() const override
+		{
+			return m_statusCode;
+		}
+
+		virtual CommandInputTypes getCmdType() override
+		{
+			return CommandInputTypes::INPUT;
+		}
+
+	protected:
+		const int m_x;
+		const int m_y;
+		uint m_statusCode;
+		const MOUSE_BTN m_btn;
 };
+
 
 //====================================================================
 

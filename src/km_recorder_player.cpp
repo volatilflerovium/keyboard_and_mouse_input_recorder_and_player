@@ -494,6 +494,8 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 	EVT_MENU(WX::MENU::MOVE_HERE, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::DO_LEFT_CLICK, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::DO_RIGHT_CLICK, RecorderPlayerKM::OnMenuClick)
+	EVT_MENU(WX::MENU::DOUBLE_LEFT_CLICK, RecorderPlayerKM::OnMenuClick)
+	EVT_MENU(WX::MENU::DOUBLE_RIGHT_CLICK, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::SCREENSHOT_CMD, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::START_ROI, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::START_DRAGGING, RecorderPlayerKM::OnMenuClick)
@@ -748,7 +750,6 @@ void RecorderPlayerKM::addCommand()
 	getFirstIndex();
 	if(m_commandInputMode!=CommandInputMode::QUIET){
 		m_playStatus=PlayStatus::PLAYING;
-		s_MouseEmulator->go2Position(wxDisplay().GetGeometry().GetWidth(), wxDisplay().GetGeometry().GetHeight());
 		RunCommands(CmdScrolledWindow::PlayMode::DEMO);
 	}
 	m_statusBar->SetLabel(wxString::Format(wxT("Total commands: %i"), m_cmdScrolledWindow->getCommandCount()));
@@ -868,10 +869,16 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 			addCommand(MoveMouseCommand::Builder("Move mouse", m_settings.getTimePadding(), m_click.x, m_click.y, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DO_LEFT_CLICK:
-			addCommand<MouseBtnCommand>(MouseLeftBtnCommand::Builder("Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, 100, m_currentWindow.c_str()));
+			addCommand<MouseBtnCommand>(MouseBtnCommand::Builder("Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, 100, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DO_RIGHT_CLICK:
-			addCommand<MouseBtnCommand>(MouseRightBtnCommand::Builder("Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, 50, m_currentWindow.c_str()));
+			addCommand<MouseBtnCommand>(MouseBtnCommand::Builder("Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::RIGHT, 50, m_currentWindow.c_str()));
+			break;
+		case WX::MENU::DOUBLE_LEFT_CLICK:
+			addCommand(DoubleClickCommand::Builder("Double Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, m_currentWindow.c_str()));
+			break;
+		case WX::MENU::DOUBLE_RIGHT_CLICK:
+			addCommand(DoubleClickCommand::Builder("Double Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::SCREENSHOT_CMD:
 			m_screenshotPopup->Popup();
@@ -988,6 +995,10 @@ void RecorderPlayerKM::mkMenu(bool allowScreenshot, bool fullMenu)
 			menu.Append(WX::MENU::DO_RIGHT_CLICK, wxT("Right Click Here"));
 			menu.Append(WX::MENU::START_ROI, wxT("Select Area"));
 			menu.Append(WX::MENU::START_DRAGGING, wxT("Start Dragging"));
+
+			menu.Append(WX::MENU::DOUBLE_LEFT_CLICK, wxT("Double Left Click Here"));
+			menu.Append(WX::MENU::DOUBLE_RIGHT_CLICK, wxT("Double Right Click Here"));
+
 			/*menu.Append(WX::MENU::DRAG_HERE, wxT("Drag/Drop Here"));
 				menu.Enable(WX::MENU::DRAG_HERE, false);// */
 			menu.Append(WX::MENU::DISPLAY_KBOARD, wxT("Text and Keyboard Input"));
@@ -1067,6 +1078,8 @@ void RecorderPlayerKM::RunCommands(CmdScrolledWindow::PlayMode mode)
 
 	m_mode=mode;
 	m_cmdScrolledWindow->reset();
+
+	s_MouseEmulator->go2Position(wxDisplay().GetGeometry().GetWidth(), wxDisplay().GetGeometry().GetHeight());
 
 	int ms=m_settings.getTimeDelay();
 	if(m_mode==CmdScrolledWindow::PlayMode::DEMO){
@@ -1465,7 +1478,6 @@ void RecorderPlayerKM::OnControlBtns(wxCommandEvent& event)
 						if(m_cmdScrolledWindow->getCommandCount()>0){
 							m_inputBlocker->clearBackground();
 							m_playStatus=PlayStatus::PLAYING;
-							s_MouseEmulator->go2Position(wxDisplay().GetGeometry().GetWidth(), wxDisplay().GetGeometry().GetHeight());
 							RunCommands(CmdScrolledWindow::PlayMode::DEMO);
 						}
 					}
@@ -1695,6 +1707,17 @@ void RecorderPlayerKM::initPopups()
 			m_inputBlocker->setTransparency(m_settings.getTransparency());
 		});
 
+		auto doubleClickThresholdTag=settingsPopup->builder<wxStaticText>(wxID_ANY,
+									wxT("Double click threshold (ms): "));
+
+		auto doubleClickThresholdInput=settingsPopup->builder<WX_TextCtrl>(wxID_ANY, wxT("100"), wxDefaultPosition,
+						FromDIP(wxSize(-1, 30)), 0, s_integerValidator);
+
+		doubleClickThresholdInput->SetValue(wxString::Format(wxT("%i"), m_settings.getDoubleClick()));
+		doubleClickThresholdInput->setCallback([this](const char* val){
+			m_settings.setDoubleClick(std::atoi(val));
+		});
+
 		auto screenshotTag=settingsPopup->builder<wxStaticText>(wxID_ANY,
 									wxT("Screenshot timeout (ms): "));
 
@@ -1739,21 +1762,27 @@ void RecorderPlayerKM::initPopups()
 			wxBoxSizer* row1=new wxBoxSizer(wxHORIZONTAL);
 			row1->Add(defaultTimeout, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
 			row1->Add(timePaddingSetting, 1);
-			
-			wxBoxSizer* row2=new wxBoxSizer(wxHORIZONTAL);
-			row2->Add(transparency, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
-			row2->Add(transparencyLevelSetting, 1);
 
+
+			wxBoxSizer* row2=new wxBoxSizer(wxHORIZONTAL);
+			row2->Add(doubleClickThresholdTag, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
+			row2->Add(doubleClickThresholdInput, 1);
+
+			
 			wxBoxSizer* row3=new wxBoxSizer(wxHORIZONTAL);
-			row3->Add(screenshotTag, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
-			row3->Add(screenshotTimeoutSetting, 1);
+			row3->Add(transparency, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
+			row3->Add(transparencyLevelSetting, 1);
 
 			wxBoxSizer* row4=new wxBoxSizer(wxHORIZONTAL);
-			row4->Add(selectionBrushColourTag, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
-			row4->Add(selectionBrushColour, 1);
+			row4->Add(screenshotTag, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
+			row4->Add(screenshotTimeoutSetting, 1);
 
 			wxBoxSizer* row5=new wxBoxSizer(wxHORIZONTAL);
-			row5->Add(interfacePopupBtn, 0);
+			row5->Add(selectionBrushColourTag, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
+			row5->Add(selectionBrushColour, 1);
+
+			wxBoxSizer* row6=new wxBoxSizer(wxHORIZONTAL);
+			row6->Add(interfacePopupBtn, 0);
 
 			wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
 			col->Add(row, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
@@ -1761,7 +1790,8 @@ void RecorderPlayerKM::initPopups()
 			col->Add(row2, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 			col->Add(row3, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 			col->Add(row4, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
-			col->Add(row5, 0);
+			col->Add(row5, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
+			col->Add(row6, 0);
 
 			settingsPopup->setSizer(col);
 		}

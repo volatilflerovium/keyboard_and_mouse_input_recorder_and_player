@@ -60,23 +60,7 @@ void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, co
 		cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
 	}
 	else{
-		if(commandID==CommandTypes::MouseLeftBtn){
-			auto cmdPtr=CmdBuilder<CommandTypes::MouseLeftBtn>::Builder(
-				run, description,
-				cmdData.get<int>("wait"),
-				cmdData.get<int>("x"), cmdData.get<int>("y"), cmdData.get<int>("pressFor"),
-				cmdData.get<const char*>("windowName"));
-
-			cmdscrolledWindowPtr->addCommand<MouseBtnCommand>(cmdPtr, indentation);
-		}
-		else if(commandID==CommandTypes::MouseRightBtn){
-			auto cmdPtr=CmdBuilder<CommandTypes::MouseRightBtn>::Builder(
-				run, description, cmdData.get<int>("wait"),
-				cmdData.get<int>("x"), cmdData.get<int>("y"), cmdData.get<int>("pressFor"),
-				cmdData.get<const char*>("windowName"));
-			cmdscrolledWindowPtr->addCommand<MouseBtnCommand>(cmdPtr, indentation);
-		}
-		else if(commandID==CommandTypes::Keyboard){
+		if(commandID==CommandTypes::Keyboard){
 			auto cmdPtr=CmdBuilder<CommandTypes::Keyboard>::Builder(
 				run, description,
 				cmdData.get<int>("keycode"), cmdData.get<int>("wait"));
@@ -93,6 +77,16 @@ void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, co
 				run, description,
 				cmdData.get<int>("wait"), cmdData.get<const char*>("text"));
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
+		}
+		else if(commandID==CommandTypes::MouseBtn){
+			auto cmdPtr=CmdBuilder<CommandTypes::MouseBtn>::Builder(
+				run, description,
+				cmdData.get<int>("wait"),
+				cmdData.get<int>("x"), cmdData.get<int>("y"),
+				static_cast<MOUSE_BTN>(cmdData.get<int>("btn")),
+				cmdData.get<int>("pressFor"),
+				cmdData.get<const char*>("windowName"));
+			cmdscrolledWindowPtr->addCommand<MouseBtnCommand>(cmdPtr, indentation);
 		}
 		else if(commandID==CommandTypes::MouseMove){
 			auto cmdPtr=CmdBuilder<CommandTypes::MouseMove>::Builder(
@@ -128,7 +122,15 @@ void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, co
 				run, description, cmdData.get<int>("wait"),
 				cmdData.get<const char*>("codePoint"));
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
-		} 
+		}
+		else if(commandID==CommandTypes::DoubleClick){
+			auto cmdPtr=CmdBuilder<CommandTypes::DoubleClick>::Builder(
+				run, description, cmdData.get<int>("wait"),
+				cmdData.get<int>("x"), cmdData.get<int>("y"),
+				static_cast<MOUSE_BTN>(cmdData.get<int>("btn")),
+				cmdData.get<const char*>("windowName"));
+			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
+		}
 	}
 }
 

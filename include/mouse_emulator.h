@@ -24,16 +24,16 @@
 
 //====================================================================
 
+enum class MOUSE_BTN
+{
+	LEFT,
+	RIGHT,
+};
+
 class MouseEmulatorI : public ErrorReporting
 {
 	public:
 		typedef std::function<void(int&, int&)> ClientMousePosition;
-
-		enum MOUSE_BUTTONS
-		{
-			LEFT  =0,
-			RIGHT =1,
-		};
 		
 	public:
 		MouseEmulatorI()=default;
@@ -41,8 +41,9 @@ class MouseEmulatorI : public ErrorReporting
 
 		virtual bool reload();
 
-		void clickLeftBtn(uint pressForMs=0);
-		void clickRightBtn(uint pressForMs=0);
+		void clickBtn(const MOUSE_BTN btn, uint pressForMs=0);
+
+		void doubleClickBtn(const MOUSE_BTN btn, uint threshold);
 
 		/*
 		 *	Move mouse to the absolute position (endX, endY) in small steps
@@ -75,14 +76,12 @@ class MouseEmulatorI : public ErrorReporting
 			THR=LOW+1,
 		};
 
-		void clickBtn(const MOUSE_BUTTONS btn, uint pressForMs);
-
 		/*
 		 * Move the mouse to the relative position (dx, dy)
 		 * */
 		virtual void setPosition(const int dx, const int dy)=0;
-		virtual void buttonDown(MOUSE_BUTTONS btn)=0;
-		virtual void buttonUp(MOUSE_BUTTONS btn)=0;
+		virtual void buttonDown(MOUSE_BTN btn)=0;
+		virtual void buttonUp(MOUSE_BTN btn)=0;
 };
 
 //--------------------------------------------------------------------
@@ -91,20 +90,6 @@ class MouseEmulatorI : public ErrorReporting
 inline bool MouseEmulatorI::reload()
 {
 	return true;
-}
-
-//--------------------------------------------------------------------
-
-inline void MouseEmulatorI::clickLeftBtn(uint pressForMs)
-{
-	clickBtn(MOUSE_BUTTONS::LEFT, pressForMs);
-}
-
-//--------------------------------------------------------------------
-
-inline void MouseEmulatorI::clickRightBtn(uint pressForMs)
-{
-	clickBtn(MOUSE_BUTTONS::RIGHT, pressForMs);
 }
 
 //====================================================================
@@ -116,10 +101,10 @@ class DummyMouse : public MouseEmulatorI
 		virtual ~DummyMouse()=default;
 
 	private:
-		virtual int getMouseButton(const MOUSE_BUTTONS btn){return 0;}
+		virtual int getMouseButton(const MOUSE_BTN btn){return 0;}
 		virtual void setPosition(const int dx, const int dy){}
-		virtual void buttonDown(MOUSE_BUTTONS btn){}
-		virtual void buttonUp(MOUSE_BUTTONS btn){}
+		virtual void buttonDown(MOUSE_BTN btn){}
+		virtual void buttonUp(MOUSE_BTN btn){}
 };
 
 //====================================================================

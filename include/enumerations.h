@@ -123,6 +123,8 @@ namespace WX
 			SUBMENU_REPEAT_LAST,
 			SUBMENU_ACTIVE,
 			SUBMENU_QUIET,
+			DOUBLE_LEFT_CLICK,
+			DOUBLE_RIGHT_CLICK,
 			_LAST,// not use
 		};
 	}

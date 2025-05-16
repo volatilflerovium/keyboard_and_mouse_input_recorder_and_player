@@ -25,7 +25,7 @@
 template<CommandTypes CT>
 struct CmdType2Bdr
 {
-	typedef MouseSelectCommand Cmd;
+	//typedef MouseSelectCommand Cmd;
 };
 
 /*
@@ -77,15 +77,9 @@ struct CmdType2Bdr<CommandTypes::MouseMove>
 };
 
 template<>
-struct CmdType2Bdr<CommandTypes::MouseLeftBtn>
+struct CmdType2Bdr<CommandTypes::MouseBtn>
 {
-	typedef MouseLeftBtnCommand Cmd;
-};
-
-template<>
-struct CmdType2Bdr<CommandTypes::MouseRightBtn>
-{
-	typedef MouseRightBtnCommand Cmd;
+	typedef MouseBtnCommand Cmd;
 };
 
 template<>
@@ -99,6 +93,12 @@ template<>
 struct CmdType2Bdr<CommandTypes::MouseDrag>
 {
 	typedef MouseDragCommand Cmd;
+};
+
+template<>
+struct CmdType2Bdr<CommandTypes::DoubleClick>
+{
+	typedef DoubleClickCommand Cmd;
 };
 
 //====================================================================

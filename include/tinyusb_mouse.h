@@ -60,28 +60,25 @@ class TinyusbMouse : protected TinyusbConnector, public MouseEmulatorI
 		void sendMouseData(int8_t scrollV, int8_t scrollH);
 		void sendMouseData();
 
-		TINYUSB_MOUSE_BUTTONS getMouseButton(const MOUSE_BUTTONS btn);
+		TINYUSB_MOUSE_BUTTONS getMouseButton(const MOUSE_BTN btn);
 
 		/*
 		 * Move the mouse to the absolute position (absX, absY)
 		 * */
 		virtual void setPosition(const int absX, const int absY) override;
 
-		virtual void buttonDown(MOUSE_BUTTONS btn) override;
-		virtual void buttonUp(MOUSE_BUTTONS btn) override;
+		virtual void buttonDown(MOUSE_BTN btn) override;
+		virtual void buttonUp(MOUSE_BTN btn) override;
 };
 
 //--------------------------------------------------------------------
 
-inline TinyusbMouse::TINYUSB_MOUSE_BUTTONS TinyusbMouse::getMouseButton(const MOUSE_BUTTONS btn)
+inline TinyusbMouse::TINYUSB_MOUSE_BUTTONS TinyusbMouse::getMouseButton(const MOUSE_BTN btn)
 {
-	if(btn==MOUSE_BUTTONS::LEFT){
+	if(btn==MOUSE_BTN::LEFT){
 		return TINYUSB_MOUSE_BUTTONS::LEFT;
 	}
-	if(btn==MOUSE_BUTTONS::RIGHT){
-		return TINYUSB_MOUSE_BUTTONS::RIGHT;
-	}
-	return TINYUSB_MOUSE_BUTTONS::MIDDLE;
+	return TINYUSB_MOUSE_BUTTONS::RIGHT;
 }
 
 //--------------------------------------------------------------------
@@ -102,7 +99,7 @@ inline void TinyusbMouse::setPosition(const int absX, const int absY)
 
 //--------------------------------------------------------------------
 
-inline void TinyusbMouse::buttonDown(MOUSE_BUTTONS btn)
+inline void TinyusbMouse::buttonDown(MOUSE_BTN btn)
 {
 	m_button=getMouseButton(btn);
 	sendMouseData();
@@ -110,7 +107,7 @@ inline void TinyusbMouse::buttonDown(MOUSE_BUTTONS btn)
 
 //--------------------------------------------------------------------
 
-inline void TinyusbMouse::buttonUp(MOUSE_BUTTONS btn)
+inline void TinyusbMouse::buttonUp(MOUSE_BTN btn)
 {
 	m_button=0;
 	sendMouseData();

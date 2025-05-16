@@ -200,6 +200,16 @@ class SettingsManager final
 			m_port=port;
 		}
 
+		uint getDoubleClick() const
+		{
+			return m_doubleClick;
+		}
+
+		void setDoubleClick(uint doubleClick)
+		{
+			m_doubleClick=doubleClick;
+		}
+
 	private:
 		wxString m_brushColour{"#0000FF"};
 		wxString m_serialPort{""};
@@ -211,6 +221,7 @@ class SettingsManager final
 		InterfaceLink m_interface{InterfaceLink::NONE};
 		uint m_baudRate{0};
 		uint m_port{0};
+		uint m_doubleClick{100};
 
 		SettingsManager()=default;
 };
@@ -219,15 +230,22 @@ class SettingsManager final
 
 inline void SettingsManager::saveToFile(std::ostream& outputStream)
 {
-	outputStream<<m_timeDelay<<":"<<m_timePadding<<":"
-					<<m_transparency<<":"
-					<<m_screenshotTimeout<<":"
-					<<m_brushColour<<":"
-					<<uint(m_interface)<<":"
-					<<m_serialPort<<":"
-					<<m_baudRate<<":"
-					<<m_ip<<":"
-					<<m_port<<": : :\n";
+	SimpleSerialization json;
+
+	json.ToString(
+		"timeDelay", m_timeDelay,
+		"timePadding", m_timePadding,
+		"transparency", m_transparency,
+		"screenshotTimeout", m_screenshotTimeout,
+		"brushColour", std::string(m_brushColour.mb_str()),
+		"interface", uint(m_interface),
+		"serialPort", std::string(m_serialPort.mb_str()),
+		"baudRate", m_baudRate,
+		"ip", std::string(m_ip.mb_str()),
+		"port", m_port,
+		"doubleClick", m_doubleClick 
+	);
+	json.dump(outputStream);
 }
 
 //--------------------------------------------------------------------

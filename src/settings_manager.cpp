@@ -37,18 +37,20 @@ bool SettingsManager::loadSettings()
 				if(infoLine.length()==0){
 					continue;
 				}
-				CstrSplit<10> parts(infoLine.c_str(), ":");
+
+				SimpleUnserialization<20> cmdData(infoLine.c_str(), SEPARATOR);
 				try{
-					m_timeDelay=std::atoi(parts[0]);
-					m_timePadding=std::atoi(parts[1]);
-					m_transparency=std::atoi(parts[2]);
-					m_screenshotTimeout=std::atoi(parts[3]);
-					m_brushColour=parts[4];
-					m_interface=InterfaceLink(std::atoi(parts[5]));
-					m_serialPort=parts[6];
-					m_baudRate=std::atoi(parts[7]);
-					m_ip=parts[8];
-					m_port=std::atoi(parts[9]);
+					m_timeDelay=cmdData.get<int>("timeDelay"); 
+					m_timePadding=cmdData.get<int>("timePadding"); 
+					m_transparency=cmdData.get<int>("transparency"); 
+					m_screenshotTimeout=cmdData.get<int>("screenshotTimeout"); 
+					m_brushColour=cmdData.get<const char*>("brushColour"); 
+					m_interface=InterfaceLink(cmdData.get<int>("interface")); 
+					m_serialPort=cmdData.get<const char*>("serialPort"); 
+					m_baudRate=cmdData.get<int>("baudRate"); 
+					m_ip=cmdData.get<const char*>("ip"); 
+					m_port=cmdData.get<int>("port"); 
+					m_doubleClick=cmdData.get<int>("doubleClick");
 					break;
 				}
 				catch(...)
