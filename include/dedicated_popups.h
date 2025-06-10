@@ -18,7 +18,6 @@
 **********************************************************************/
 #ifndef _DEDICATED_POPUP_H
 #define _DEDICATED_POPUP_H
-
 #include "extended_popup.h"
 
 #include <wx/wx.h>

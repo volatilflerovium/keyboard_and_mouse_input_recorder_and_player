@@ -16,16 +16,13 @@
 **********************************************************************/
 #ifndef _KEYBOARD_EMULATOR_H
 #define _KEYBOARD_EMULATOR_H
-
 #include "key_conversion.h"
 #include "error_reporting.h"
-#include "debug_utils.h"
+#include "utf8_text.h"
 
 #include <functional>
 #include <map>
 #include <thread>
-#include <cstring>
-#include <string>
 
 //====================================================================
 
@@ -44,31 +41,46 @@ class KeyboardEmulatorI : public ErrorReporting
 		virtual void loadPrintableCharacters()=0;
 		
 		void enter();
-		void inputText(const char* text);
-		void inputLine(const char* text);
-		void unicodeCharacter(const char* unicode);
-		void shortcut(const char* sct);
-		void shortcut(const ComboStringParser& shortcut);
+		void inputText(const char8_t* text);
+		void inputLine(const char8_t* text);
+		void unicodeCharacter(const char8_t* unicode);
+		void shortcut(const KeyCombo& shortcut);
 
 		virtual void commandKey(SPKEYS k1)=0;
 
-	protected:
-		const std::map<std::string, int>* m_shortcutParserKeyMapPtr;
+		const char8_t* getKeyName(int rawKeyCode) const;
 
-		KeyboardEmulatorI()=default;
+	protected:
+		const std::map<std::string, int>* m_keyMap;
+
+		KeyboardEmulatorI();
 		
-		void addCombo(char c, int k1, int k2=-1, int k3=-1, int k4=-1, int k5=-1);
-		void loadPrintableCharacters(const char* fileName, const std::map<std::string, int>& keyMap);
+		void addCombo(UTF8Char c, std::function<void(KeyboardEmulatorI*)> combo);
+
+		void addCombo(UTF8Char c, int k1);
+
+		void loadPrintableCharacters(const char* fileName);
 
 	private:
-		std::map<char, Combo> m_combos;
+		std::map<UTF8Char, Combo> m_combos;
+		std::map<int, std::pair<int,std::u8string>> m_shortcuts;
 
 		virtual void sendKey(int keyCode)=0;
 		virtual void sendKey(int hidCode1, int hidCode2)=0;
-		virtual void sendKey(int hidCode1, int hidCode2, int hidCode3, int hidCode4=-1, int hidCode5=-1, int hidCode6=-1)=0;
+		virtual void sendKey(int hidCode1, int hidCode2, int hidCode3)=0;
+		virtual void sendKey(const KeyCombo& keyCodes)=0;
 
 		virtual void addWhiteCharacters()=0;
 		virtual void prepareUnicodeInput()=0;
+
+		bool symbolExists(const char8_t* utf8key);
+
+		static std::function<void(KeyboardEmulatorI*)> comboBuilder(const KeyCombo& keyCodes);
+
+		UTF8Char printableCharacterParser(const char* str, std::function<void(KeyboardEmulatorI*)>& combo1, std::function<void(KeyboardEmulatorI*)>& combo2, const std::map<std::string, int>* keyMap);
+
+	friend
+	class KeyboardConfigurator;
 };
 
 //--------------------------------------------------------------------
@@ -81,24 +93,6 @@ inline bool KeyboardEmulatorI::reload()
 
 //--------------------------------------------------------------------
 
-inline void KeyboardEmulatorI::shortcut(const char* sct)
-{
-	ComboStringParser shortcutObj(sct);
-	shortcut(shortcutObj);
-}
-
-//--------------------------------------------------------------------
-
-inline void KeyboardEmulatorI::shortcut(const ComboStringParser& shortcut)
-{
-	int keyCodes[MAX_HID_CODES];
-	shortcut.toKeycode(m_shortcutParserKeyMapPtr, keyCodes);
-	
-	sendKey(keyCodes[0], keyCodes[1], keyCodes[2], keyCodes[3], keyCodes[4], keyCodes[5]);
-}
-
-//--------------------------------------------------------------------
-
 inline void KeyboardEmulatorI::enter()
 {
 	commandKey(SPKEYS::ENTER);
@@ -106,18 +100,25 @@ inline void KeyboardEmulatorI::enter()
 
 //--------------------------------------------------------------------
 
-inline void KeyboardEmulatorI::inputText(const char* text)
+inline void KeyboardEmulatorI::inputText(const char8_t* text)
 {
-	for(size_t i=0; i<std::strlen(text); i++){
-		if(m_combos.find(text[i])!=m_combos.end()){
-			m_combos[text[i]](this);
+	clearError();
+	UTF8Char symbol;
+	UTF8_Text utf8Text(text);
+	utf8Text.iterar([this, &symbol](const char8_t* ptr, int bts){
+		symbol.loadChar(ptr, bts);
+		if(m_combos.find(symbol)!=m_combos.end()){
+			m_combos[symbol](this);
 		}
-	}
+		else{
+			setErrorCode(1);
+		}
+	});
 }
 
 //--------------------------------------------------------------------
 
-inline void KeyboardEmulatorI::inputLine(const char* text)
+inline void KeyboardEmulatorI::inputLine(const char8_t* text)
 {
 	inputText(text);
 	enter();
@@ -125,11 +126,44 @@ inline void KeyboardEmulatorI::inputLine(const char* text)
 
 //--------------------------------------------------------------------
 
-inline void KeyboardEmulatorI::unicodeCharacter(const char* unicode)
+inline void KeyboardEmulatorI::unicodeCharacter(const char8_t* unicode)
 {
 	prepareUnicodeInput();
-	std::this_thread::sleep_for(std::chrono::milliseconds(15));
 	inputLine(unicode);
+}
+
+//--------------------------------------------------------------------
+
+inline void KeyboardEmulatorI::addCombo(UTF8Char c, std::function<void(KeyboardEmulatorI*)> combo)
+{
+	m_combos.emplace(c, combo);
+}
+
+//--------------------------------------------------------------------
+
+inline void KeyboardEmulatorI::addCombo(UTF8Char c, int k)
+{
+	addCombo(c, [k](KeyboardEmulatorI* kboard){
+		kboard->sendKey(k);
+	});
+}
+
+//--------------------------------------------------------------------
+
+inline bool KeyboardEmulatorI::symbolExists(const char8_t* utf8key)
+{
+	return m_combos.find(utf8key)!=m_combos.end();
+}
+
+//--------------------------------------------------------------------
+
+inline const char8_t* KeyboardEmulatorI::getKeyName(int rawKeyCode) const
+{
+	std::map<int, std::pair<int, std::u8string>>::const_iterator it=m_shortcuts.find(rawKeyCode);
+	if(it!=m_shortcuts.end()){
+		return it->second.second.c_str();
+	}
+	return u8"";
 }
 
 //====================================================================
@@ -142,8 +176,8 @@ class DummyKeyboard : public KeyboardEmulatorI
 
 		virtual void sendKey(int keyCode){}
 		virtual void sendKey(int hidCode1, int hidCode2){}
-		virtual void sendKey(int hidCode1, int hidCode2, int hidCode3, int hidCode4=-1, int hidCode5=-1, int hidCode6=-1){}
-
+		virtual void sendKey(int hidCode1, int hidCode2, int hidCode3){};
+		virtual void sendKey(const KeyCombo& keyCodes){};
 		virtual void numLk(){};
 		virtual bool isActive(){return false;};
 

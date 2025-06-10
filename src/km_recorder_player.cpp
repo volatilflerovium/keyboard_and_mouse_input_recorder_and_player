@@ -22,6 +22,8 @@
 #include "progress_bar.h"
 #include "wx_worker.h"
 
+#include "configurator.h"
+
 #include "keyboard_emulator.h"
 #include "mouse_emulator.h"
 
@@ -85,8 +87,9 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 , m_playBitmapBundle(mkBitmapBundle("actions/media-playback-start-symbolic.symbolic.png"))
 , m_pauseBitmapBundle(mkBitmapBundle("actions/media-playback-pause-symbolic.symbolic.png"))
 , m_statusBar(nullptr)
+, m_keyConfiguration(nullptr)
 , m_inputBlocker(nullptr)
-, m_workerPtr(nullptr)
+, m_connectionWorkerPtr(nullptr)
 , m_commandInputMode(CommandInputMode::REPEAT_LAST)
 , m_state(State::INITIAL)
 , m_currentPanelState(PanelStates::Initial)
@@ -442,7 +445,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	bx->Add(mainContentSizerV, 1, wxEXPAND | wxALL, FromDIP(10));
 	this->SetSizerAndFit(bx);
 
-	SetCurrentWindow(FULL_SCREEN);
+	//SetCurrentWindow(FULL_SCREEN);
 
 	//===============================================
 
@@ -451,6 +454,8 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	Centre();
 
 	checkConnection();
+
+	//m_configurationTimer.StartOnce(50);
 }
 
 //--------------------------------------------------------------------
@@ -469,6 +474,7 @@ RecorderPlayerKM::~RecorderPlayerKM()
    wxDELETE(m_screenshotPopup);
 	wxDELETE(m_auxKeyboard);
    wxDELETE(m_settingsPopup);
+   wxDELETE(m_keyConfiguration);
 }
 
 //--------------------------------------------------------------------
@@ -610,7 +616,7 @@ void RecorderPlayerKM::OnWorker(wxCommandEvent& event)
 	}
 
 	// Notice that detached wxThreads delete themselves
-	m_workerPtr=nullptr;
+	m_connectionWorkerPtr=nullptr;
 }
 
 //--------------------------------------------------------------------
@@ -626,13 +632,13 @@ void RecorderPlayerKM::checkConnection()
 	m_recordingBtn->Disable();
 
 	if(HIDManager::currentEmulator(HID_TARGET::TINYUSB)){
-		if(!m_workerPtr){
+		if(!m_connectionWorkerPtr){
 			m_waitPopup->Popup();
-			m_workerPtr = new WxWorker(this);
+			m_connectionWorkerPtr = new WxWorker(this);
 
-			if(m_workerPtr->Run()!=wxTHREAD_NO_ERROR){
-				delete m_workerPtr;
-				m_workerPtr=nullptr;
+			if(m_connectionWorkerPtr->Run()!=wxTHREAD_NO_ERROR){
+				delete m_connectionWorkerPtr;
+				m_connectionWorkerPtr=nullptr;
 			}
 		}
 	}
@@ -656,6 +662,11 @@ void RecorderPlayerKM::checkConnection()
 		UpdateConnection(isConnected);
 		if(!isConnected){
 			m_interfacePopup->Popup();
+		}
+		else{
+			if(!existPath(KEYBOARD_MAPPING)){
+				OnAutoConfigure();
+			}
 		}
 	}
 }
@@ -704,7 +715,7 @@ void RecorderPlayerKM::OnSelection(wxCommandEvent& event)
 			int endY=m_selectionRect.m_posY+m_selectionRect.m_height;
 
 			addCommand(MouseDragCommand::Builder(
-				"Mouse grab/drop",
+				u8"Mouse grab/drop",
 				m_settings.getTimePadding(),
 				m_selectionRect.m_posX,
 				m_selectionRect.m_posY,
@@ -840,7 +851,7 @@ void RecorderPlayerKM::OnSetRoiType(wxCommandEvent& evt)
 
 	if(selection==SELECT){
 		if(m_selectionRect.isNoTrivial()){
-			addCommand(MouseSelectCommand::Builder("Mouse select",
+			addCommand(MouseSelectCommand::Builder(u8"Mouse select",
 				m_settings.getTimePadding(),
 				m_selectionRect.m_posX, m_selectionRect.m_posY,
 				m_selectionRect.m_width, m_selectionRect.m_height,
@@ -866,19 +877,19 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 			m_selectWindowPopup->Popup();
 			break;
 		case WX::MENU::MOVE_HERE:
-			addCommand(MoveMouseCommand::Builder("Move mouse", m_settings.getTimePadding(), m_click.x, m_click.y, m_currentWindow.c_str()));
+			addCommand(MoveMouseCommand::Builder(u8"Move mouse", m_settings.getTimePadding(), m_click.x, m_click.y, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DO_LEFT_CLICK:
-			addCommand<MouseBtnCommand>(MouseBtnCommand::Builder("Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, 100, m_currentWindow.c_str()));
+			addCommand<MouseBtnCommand>(MouseBtnCommand::Builder(u8"Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, 100, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DO_RIGHT_CLICK:
-			addCommand<MouseBtnCommand>(MouseBtnCommand::Builder("Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::RIGHT, 50, m_currentWindow.c_str()));
+			addCommand<MouseBtnCommand>(MouseBtnCommand::Builder(u8"Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::RIGHT, 50, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DOUBLE_LEFT_CLICK:
-			addCommand(DoubleClickCommand::Builder("Double Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, m_currentWindow.c_str()));
+			addCommand(DoubleClickCommand::Builder(u8"Double Mouse left button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::DOUBLE_RIGHT_CLICK:
-			addCommand(DoubleClickCommand::Builder("Double Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, m_currentWindow.c_str()));
+			addCommand(DoubleClickCommand::Builder(u8"Double Mouse right button click", m_settings.getTimePadding(), m_click.x, m_click.y, MOUSE_BTN::LEFT, m_currentWindow.c_str()));
 			break;
 		case WX::MENU::SCREENSHOT_CMD:
 			m_screenshotPopup->Popup();
@@ -890,7 +901,7 @@ void RecorderPlayerKM::OnMenuClick(wxCommandEvent& event)
 			m_inputBlocker->drawLine();
 			break;
 		case WX::MENU::DRAG_HERE:
-			addCommand(MouseDragCommand::Builder( "Mouse grab/drop to here", m_settings.getTimePadding(),
+			addCommand(MouseDragCommand::Builder(u8"Mouse grab/drop to here", m_settings.getTimePadding(),
 				m_click.x, m_click.y, m_currentWindow));
 			break;
 		case WX::MENU::CLOSE_MENU:
@@ -1246,14 +1257,15 @@ void RecorderPlayerKM::OnTextInput(wxCommandEvent& event)
 	 * */
 	//	GetNumberOfLines
 	if(m_textCmdInput->GetLineLength(0)>0){
-		std::string input=std::string(m_textCmdInput->GetValue().mb_str());
-		std::string partial;
-		if(input.length()>16){
-			partial=input.substr(0, 16);
-			partial.append("...");
+		UTF8_Text input(wxString2u8String(m_textCmdInput->GetValue()));
+
+		std::u8string partial;
+		if(input.length()>32){
+			partial=input.substr(0, 32);
+			partial.append(u8"...");
 		}
 		else{
-			partial=input;
+			partial=input.substr(0);
 		}
 
 		addCommand(TextCommand::Builder(partial.c_str(), m_settings.getTimePadding(), input.c_str()));
@@ -1269,139 +1281,122 @@ void RecorderPlayerKM::OnTextInput(wxCommandEvent& event)
 
 void RecorderPlayerKM::OnKeybordBtns(wxCommandEvent& event)
 {
-	if(0==m_specialKeysRadioBox->GetSelection()){
-		wxMessageBox(wxT("Select a valid option."));
-		return;
-	}
-
-	bool isShortcut=(2==m_specialKeysRadioBox->GetSelection());
-
-	auto processInput=[isShortcut, this](const char* keyStr, SPKEYS keyCode){
-		if(isShortcut){
-			wxString str=m_shortcutInput->GetValue();
-			if(str.Len()>0){
-				str+="+";
-			}
-			str+=keyStr;
-			m_shortcutInput->ChangeValue(str);
-		}
-		else{
-			addCommand(KeyCommad::Builder(keyStr, uint(keyCode), 20));
-		}
+	auto processInput=[this](const char8_t* keyStr, SPKEYS keyCode){
+		addCommand(KeyCommad::Builder(keyStr, uint(keyCode), 20));
 	};
 
 	switch(event.GetId())
 	{
 		case WX::KBD::Esc_BTN:
-			addCommand(KeyCommad::Builder("Esc", uint(SPKEYS::ESC), 20));
+			addCommand(KeyCommad::Builder(u8"Esc", uint(SPKEYS::ESC), 20));
 		break;
 		case WX::KBD::ScrLk_BTN:
-			processInput("ScrLk", SPKEYS::SCROLLLOCK);
+			processInput(u8"ScrLk", SPKEYS::SCROLLLOCK);
 		break;
 		case WX::KBD::Pause_BTN:
-			processInput("Pause", SPKEYS::PAUSE);
+			processInput(u8"Pause", SPKEYS::PAUSE);
 		break;
 		case WX::KBD::F1_BTN:
-			processInput("F1", SPKEYS::F1);
+			processInput(u8"F1", SPKEYS::F1);
 		break;
 		case WX::KBD::F2_BTN:
-			processInput("F2", SPKEYS::F2);
+			processInput(u8"F2", SPKEYS::F2);
 		break;
 		case WX::KBD::F3_BTN:
-			processInput("F3", SPKEYS::F3);
+			processInput(u8"F3", SPKEYS::F3);
 		break;
 		case WX::KBD::F4_BTN:
-			processInput("F4", SPKEYS::F4);
+			processInput(u8"F4", SPKEYS::F4);
 		break;
 		case WX::KBD::F5_BTN:
-			processInput("F5", SPKEYS::F5);
+			processInput(u8"F5", SPKEYS::F5);
 		break;
 		case WX::KBD::F6_BTN:
-			processInput("F6", SPKEYS::F6);
+			processInput(u8"F6", SPKEYS::F6);
 		break;
 		case WX::KBD::F7_BTN:
-			processInput("F7", SPKEYS::F7);
+			processInput(u8"F7", SPKEYS::F7);
 		break;
 		case WX::KBD::F8_BTN:
-			processInput("F8", SPKEYS::F8);
+			processInput(u8"F8", SPKEYS::F8);
 		break;
 		case WX::KBD::F9_BTN:
-			processInput("F9", SPKEYS::F9);
+			processInput(u8"F9", SPKEYS::F9);
 		break;
 		case WX::KBD::F10_BTN:
-			processInput("F10", SPKEYS::F10);
+			processInput(u8"F10", SPKEYS::F10);
 		break;
 		case WX::KBD::F11_BTN:
-			processInput("F11", SPKEYS::F11);
+			processInput(u8"F11", SPKEYS::F11);
 		break;
 		case WX::KBD::F12_BTN:
-			processInput("F12", SPKEYS::F12);
+			processInput(u8"F12", SPKEYS::F12);
 		break;
 		case WX::KBD::Tab_BTN:
-			processInput("Tab", SPKEYS::TAB);
+			processInput(u8"Tab", SPKEYS::TAB);
 		break;
 		case WX::KBD::PrtSc_BTN:
-			processInput("PrtSc", SPKEYS::SYSRQ);
+			processInput(u8"PrtSc", SPKEYS::PRINT_SCREEN);
 		break;
 		case WX::KBD::Backspace_BTN:
-			processInput("Backspace", SPKEYS::BACKSPACE);
+			processInput(u8"Backspace", SPKEYS::BACKSPACE);
 		break;
 		case WX::KBD::Enter_BTN:// addCommand
-			addCommand(KeyCommad::Builder("Enter", uint(SPKEYS::ENTER), 20));
+			addCommand(KeyCommad::Builder(u8"Enter", uint(SPKEYS::ENTER), 20));
 		break;
 		case WX::KBD::Insert_BTN:
-			processInput("Ins", SPKEYS::INSERT);
+			processInput(u8"Ins", SPKEYS::INSERT);
 		break;
 		case WX::KBD::Home_BTN:
-			processInput("Home", SPKEYS::HOME);
+			processInput(u8"Home", SPKEYS::HOME);
 		break;
 		case WX::KBD::PgUp_BTN:
-			processInput("PgUp", SPKEYS::PAGEUP);
+			processInput(u8"PgUp", SPKEYS::PAGEUP);
 		break;
 		case WX::KBD::Delete_BTN:
-			processInput("Del", SPKEYS::DELETE);
+			processInput(u8"Del", SPKEYS::DELETE);
 		break;
 		case WX::KBD::End_BTN:
-			processInput("End", SPKEYS::END);
+			processInput(u8"End", SPKEYS::END);
 		break;
 		case WX::KBD::PgDn_BTN:
-			processInput("PgDn", SPKEYS::PAGEDOWN);
+			processInput(u8"PgDn", SPKEYS::PAGEDOWN);
 		break;
 		case WX::KBD::ARROW_UP_BTN:
-			processInput("UpArrow", SPKEYS::UP);
+			processInput(u8"UpArrow", SPKEYS::UP);
 		break;
 		case WX::KBD::ARROW_LEFT_BTN:
-			processInput("BackArrow", SPKEYS::LEFT);
+			processInput(u8"BackArrow", SPKEYS::LEFT);
 		break;
 		case WX::KBD::ARROW_DOWN_BTN:
-			processInput("DownArrow", SPKEYS::DOWN);
+			processInput(u8"DownArrow", SPKEYS::DOWN);
 		break;
 		case WX::KBD::ARROW_RIGHT_BTN:
-			processInput("forwardArrow", SPKEYS::RIGHT);
+			processInput(u8"forwardArrow", SPKEYS::RIGHT);
 		break;
 		case WX::KBD::CAPS_LOCK:// addCommand
-			addCommand(KeyCommad::Builder("Caps Lock", uint(SPKEYS::CAPSLOCK), 20));
+			addCommand(KeyCommad::Builder(u8"Caps Lock", uint(SPKEYS::CAPSLOCK), 20));
 		break;
 		case WX::KBD::LEFT_CTRL:
-			processInput("Ctrl", SPKEYS::LEFTCTRL);
+			processInput(u8"Ctrl", SPKEYS::LEFTCTRL);
 		break;
 		case WX::KBD::RIGHT_CTRL:
-			processInput("R-Ctrl", SPKEYS::RIGHTCTRL);
+			processInput(u8"R-Ctrl", SPKEYS::RIGHTCTRL);
 		break;
 		case WX::KBD::LEFT_ALT:
-			processInput("Alt", SPKEYS::LEFTALT);
+			processInput(u8"Alt", SPKEYS::LEFTALT);
 		break;
 		case WX::KBD::RIGHT_ALT:
-			processInput("R-Alt", SPKEYS::RIGHTALT);
+			processInput(u8"R-Alt", SPKEYS::RIGHTALT);
 		break;
 		case WX::KBD::LEFT_SHIFT:
-			processInput("Shift", SPKEYS::LEFTSHIFT);
+			processInput(u8"Shift", SPKEYS::LEFTSHIFT);
 		break;
 		case WX::KBD::RIGHT_SHIFT:
-			processInput("R-Shift", SPKEYS::RIGHTSHIFT);
+			processInput(u8"R-Shift", SPKEYS::RIGHTSHIFT);
 		break;
 		case WX::KBD::SUPER:
-			processInput("Super", SPKEYS::LEFTMETA);
+			processInput(u8"Super", SPKEYS::LEFTMETA);
 		break;
 		default:
 		break;
@@ -1657,7 +1652,8 @@ void RecorderPlayerKM::initPopups()
 
 	//------------------------------------------------
 	//----------------- Settings ---------------------
-	
+
+
 	m_settingsPopup=new PopupWrapper();
 
 	m_settingsPopup->setPopupBuilder([this](){
@@ -1753,6 +1749,14 @@ void RecorderPlayerKM::initPopups()
 			m_interfacePopup->Popup();
 		});
 
+		auto symbolsPopupBtn=settingsPopup->builder<wxButton>(wxID_ANY, wxT("Add Symbols"));
+
+		symbolsPopupBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event){
+			m_settingsPopup->Dismiss();
+			OnAutoConfigure();
+		});
+
+
 		// Layout
 		{
 			wxBoxSizer* row=new wxBoxSizer(wxHORIZONTAL);
@@ -1783,6 +1787,8 @@ void RecorderPlayerKM::initPopups()
 
 			wxBoxSizer* row6=new wxBoxSizer(wxHORIZONTAL);
 			row6->Add(interfacePopupBtn, 0);
+			row6->Add(1, 1, wxEXPAND);
+			row6->Add(symbolsPopupBtn, 0);
 
 			wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
 			col->Add(row, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
@@ -1791,7 +1797,7 @@ void RecorderPlayerKM::initPopups()
 			col->Add(row3, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 			col->Add(row4, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 			col->Add(row5, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
-			col->Add(row6, 0);
+			col->Add(row6, 0, wxEXPAND);
 
 			settingsPopup->setSizer(col);
 		}
@@ -2125,21 +2131,31 @@ void RecorderPlayerKM::initPopups()
 		wxButton* submitBtn = auxKeyboard->builder<wxButton>(WX::SUBMIT_INPUT, wxT("OK"));
 
 		wxTextCtrl* unicodeInput=auxKeyboard->builder<wxTextCtrl>(wxID_ANY, wxT(""),
-								wxDefaultPosition, FromDIP(wxSize(70, 30)),
+								wxDefaultPosition, FromDIP(wxSize(100, 30)),
 								wxTE_PROCESS_ENTER, wxDefaultValidator, wxTextCtrlNameStr);
 
 		unicodeInput->SetHint(wxT("XXXX"));
 
 		unicodeInput->Bind(wxEVT_TEXT_ENTER, [unicodeInput, this](wxCommandEvent& event) {
+			if(unicodeInput->GetValue().length()>0 && unicodeInput->GetValue().find(" ")==std::string::npos){
 
-			if(unicodeInput->GetValue().length()>0 &&
-				unicodeInput->GetValue().find(" ")==std::string::npos){
-				std::string description("Unicode: ");
-				description.append(unicodeInput->GetValue().Lower().mb_str());
-				addCommand(UnicodeCommand::Builder(description.c_str(),
-									m_settings.getTimePadding(), unicodeInput->GetValue().Lower().mb_str()));
+				std::u8string unicodeStr=wxString2u8String(unicodeInput->GetValue().Lower());
 
 				unicodeInput->SetValue("");
+
+				s_KeyboardEmulator->unicodeCharacter(unicodeStr.data());
+
+				//std::u8string symbol=wxString2u8String(unicodeInput->GetValue());
+				//dbg(reinterpret_cast<const char*>(symbol.data()), "<<--");
+
+				std::u8string description=u8"Unicode: ";
+				description.append(unicodeStr.data());
+
+				addCommand(
+					UnicodeCommand::Builder(
+						description.data(), m_settings.getTimePadding(), unicodeStr.data()
+					)
+				);
 			}
 		});
 
@@ -2147,16 +2163,25 @@ void RecorderPlayerKM::initPopups()
 								wxDefaultPosition, FromDIP(wxSize(180, 30)),
 								wxTE_PROCESS_ENTER, s_shortcutValidator);
 
-		m_shortcutInput->SetHint(wxT("key1+...+key5"));
+		m_shortcutInput->SetHint(wxT("key1...key5"));
 
 		m_shortcutInput->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent& event) {
-			addCommand(ShortcutCommand::Builder(
-								m_shortcutInput->GetValue().Upper().mb_str(),
-								m_settings.getTimePadding(),
-								m_shortcutInput->GetValue().Upper().mb_str()
-								)
-						);
-				m_shortcutInput->ChangeValue("");
+
+			std::u8string shortcutStr=wxString2u8String(m_shortcutInput->GetValue().Upper().ToUTF8());
+
+			addCommand(
+				ShortcutCommand::Builder(
+					shortcutStr.data(), m_settings.getTimePadding(), m_shortcutCombo
+				)
+			);
+			m_shortcutInput->ChangeValue("");
+			for(unsigned char i=0; i<MAX_HID_CODES; i++){
+				m_keyNames[i]="";
+			}
+		});
+
+		m_shortcutInput->Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent& event){
+			makeShortcut(event);
 		});
 
 		wxStaticText* unicodeText=auxKeyboard->builder<wxStaticText>(wxID_ANY, wxT("Unicode:"));
@@ -2177,22 +2202,6 @@ void RecorderPlayerKM::initPopups()
 			row->Add(unicodeCol, 0, wxRIGHT, FromDIP(10));
 			row->Add(shortcutCol, 0, FromDIP(10));
 			kbrdSizerV->Add(row, 0, FromDIP(10));
-		}
-
-		{
-			ArrayStringType choices(3, "");
-			choices[0]="Select";
-			choices[1]="Single command";
-			choices[2]="Shortcut";
-
-			m_specialKeysRadioBox=auxKeyboard->builder<wxRadioBox>(wxID_ANY, "",
-						wxDefaultPosition, wxDefaultSize, choices, 3, wxRA_HORIZONTAL);
-
-			m_specialKeysRadioBox->SetSelection(0);
-
-			wxBoxSizer* row = new wxBoxSizer(wxHORIZONTAL);
-			row->Add(m_specialKeysRadioBox, 0);
-			kbrdSizerV->Add(row, 0, wxCENTER, FromDIP(10));
 		}
 
 		wxBoxSizer* kbrdSizer=new wxBoxSizer(wxHORIZONTAL);
@@ -2351,6 +2360,65 @@ void RecorderPlayerKM::OnModeSelection(CommandInputMode mode)
 	}
 }
 
+//--------------------------------------------------------------------
+
+void RecorderPlayerKM::OnAutoConfigure()
+{
+	if(!m_keyConfiguration){
+		m_keyConfiguration=new KeyMapPopup(this);
+	}
+	m_keyConfiguration->Popup();
+}
+
+//--------------------------------------------------------------------
+
+void RecorderPlayerKM::makeShortcut(wxKeyEvent& event)
+{
+	if(WXK_RETURN==event.GetKeyCode()){
+		event.Skip();
+		return;
+	}
+
+	wxString keyName=wxString::FromUTF8(reinterpret_cast<const char*>(s_KeyboardEmulator->getKeyName(event.GetRawKeyCode())));
+
+	if(keyName=="" || keyName=="+"){
+		return;
+	}
+
+	if(WXK_BACK==event.GetKeyCode()){
+		m_shortcutCombo.pop();
+
+		for(unsigned char i=MAX_HID_CODES-1; i>=0 && i<255; i--){
+			if(m_keyNames[i]!=""){
+				m_keyNames[i]="";
+				break;
+			}
+		}
+	}
+	else{
+		for(unsigned char i=0; i<MAX_HID_CODES; i++){
+			if(m_keyNames[i]==""){
+				m_keyNames[i]=keyName;
+				break;
+			}
+		}
+
+		m_shortcutCombo.pushBack(event.GetRawKeyCode());
+	}
+	wxString str;
+	for(unsigned char i=0; i<MAX_HID_CODES; i++){
+		if(i>0 && m_keyNames[i]!=""){
+			str+="+";
+		}
+		str+=m_keyNames[i];
+		if(m_keyNames[i]==""){					
+			break;
+		}
+	}
+
+	m_shortcutInput->SetValue(str);
+	m_shortcutInput->SetInsertionPointEnd();
+}
 //--------------------------------------------------------------------
 
 const char* RecorderPlayerKM::session(bool regenerate)

@@ -17,7 +17,6 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "dedicated_popups.h"
-
 #include "image_panel.h"
 #include "light_image_panel.h"
 #include "event_definitions.h"
@@ -193,7 +192,7 @@ void AddCmdPopup::OnAddCtrlCmd(wxCommandEvent& event)
 	if(WX::ADD_CTRL_CMD==event.GetId()){
 		Dismiss();
 		
-		CtrlCommand* commandPtr=CtrlCommand::Builder("Watch ROI",
+		CtrlCommand* commandPtr=CtrlCommand::Builder(u8"Watch ROI",
 						m_imgName, m_roi.c_str(), m_windowName.c_str(), 240, 100);
 
 		int timeout=m_timeoutInput->GetValue();

@@ -26,6 +26,7 @@
 #include "settings_manager.h"
 #include "event_definitions.h"
 #include "wx_utils.h"
+#include "keyboard_configuration.h"
 
 #include <wx/wx.h>
 #include <wx/colour.h>
@@ -136,6 +137,9 @@ class RecorderPlayerKM : public wxFrame
 		wxBitmapBundle m_playBitmapBundle;
 		wxBitmapBundle m_pauseBitmapBundle;
 
+		wxString m_keyNames[MAX_HID_CODES]={"", "", "", "", "", ""};
+		KeyCombo m_shortcutCombo;
+
 		wxButton* m_recordingBtn;
 		wxButton* m_openLoopBtn;
 		wxButton* m_demoBtn;
@@ -166,7 +170,6 @@ class RecorderPlayerKM : public wxFrame
 		wxCheckBox* m_selectAllCheck;
 		wxCheckBox* m_invertCheck;
 		wxRadioBox* m_roiRadioBox;
-		wxRadioBox* m_specialKeysRadioBox;
 
 		wxChoice* m_inputModeDropdown;
 		wxComboBox* m_shortcutDropDown;
@@ -176,13 +179,14 @@ class RecorderPlayerKM : public wxFrame
       
 		PopupWrapper* m_auxKeyboard;
       PopupWrapper* m_settingsPopup;
-      
+
 		ExtendedPopup* m_saveToFilePopup;
 		WindowPreview* m_windowPreviewPopup;
 		AddCmdPopup* m_setupCtrlCmdPopup;
 		EditCtrlCmdPopup* m_editCtrlCmdPopup;
 		ExtendedPopup* m_interfacePopup;
 		ExtendedPopup* m_waitPopup;
+		KeyMapPopup* m_keyConfiguration;
 
 		FileListPopup* m_fileManagerPopup;
 
@@ -195,7 +199,7 @@ class RecorderPlayerKM : public wxFrame
 		wxMessageDialog* m_saveDataDialog;
 
 		ProgressBar* m_progressBarPtr;
-		WxWorker* m_workerPtr; 
+		WxWorker* m_connectionWorkerPtr; 
 
 		CmdScrolledWindow::PlayMode m_mode;
 		Cmd m_getFocusCmd;
@@ -218,6 +222,7 @@ class RecorderPlayerKM : public wxFrame
 		void UpdateConnection(bool isConnected);
 		void initPopups();
 		bool Pause();
+		void OnAutoConfigure();
 
 		void OnModeSelection(CommandInputMode mode);
 
@@ -246,6 +251,8 @@ class RecorderPlayerKM : public wxFrame
 
 		template<typename T>
 		void addCommand(T* cmd);
+
+		void makeShortcut(wxKeyEvent& event);
 
 		void OnWorker(wxCommandEvent& event);
 		void postEvent(wxEventType commandEventType, int id);

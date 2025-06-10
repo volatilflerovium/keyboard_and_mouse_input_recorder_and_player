@@ -30,14 +30,9 @@
 **********************************************************************/
 #include "input_command.h"
 #include "ImageDiff_Lib/simple_image_difference.h"
-#include "cstr_split.h"
 #include "keyboard_emulator.h"
 #include "mouse_emulator.h"
 #include "settings_manager.h"
-
-#include "debug_utils.h"
-
-#include <wx/wx.h>
 
 //====================================================================
 
@@ -63,8 +58,9 @@ const char* const ExitCode::ExitCodeVerbose[ExitCode::TOTAL_MSG]={
 	"Target window is closed",     //TARGET_WINDOW_CLOSED=1<<4,
 	"Image corruption",            //CV_EXCEPTION=1<<5,
 	"The input position for the command\nwas out of the visible screen",//OUT_OF_BOUND=1<<6,// when pointer is trying to get to a position outside of the screen
-	"System error"                 //SYSTEM_FAILED=1<<7,
-	"Unknown"
+	"System error",                 //SYSTEM_FAILED=1<<7,
+	"Unknown",
+	"Missing symbol"
 };
 
 //====================================================================
@@ -121,12 +117,16 @@ bool WindowOffset::isTargetValid(int x, int y)
 
 //====================================================================
 
-TextCommand::TextCommand(const char* description, int wait, const std::string& text)
+TextCommand::TextCommand(const char8_t* description, int wait, const std::u8string& text)
 :InputCommand(description, wait)
 , m_text(text)
 {
 	m_cmd=[this](){
-		s_KeyboardEmulator->inputText(m_text.c_str());
+		m_statusCode=ExitCode::OK;
+		s_KeyboardEmulator->inputText(m_text.data());
+		if(s_KeyboardEmulator->getErrorCode()>0){
+			m_statusCode=ExitCode::MISSING_SYMBOL;
+		}
 	};
 }
 
@@ -139,9 +139,9 @@ void TextCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
-		"text", m_text,
+		"text", reinterpret_cast<const char*>(m_text.data()),
 		"wait", m_wait
 		);
 	json.dump(outputStream);
@@ -149,12 +149,16 @@ void TextCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-LineCommand::LineCommand(const char* description, int wait, const std::string& line)
+LineCommand::LineCommand(const char8_t* description, int wait, const std::u8string& line)
 :InputCommand(description, wait)
 , m_line(line)
 {
 	m_cmd=[this](){
-		s_KeyboardEmulator->inputLine(m_line.c_str());
+		m_statusCode=ExitCode::OK;
+		s_KeyboardEmulator->inputLine(m_line.data());
+		if(s_KeyboardEmulator->getErrorCode()>0){
+			m_statusCode=ExitCode::MISSING_SYMBOL;
+		}
 	};
 }
 
@@ -168,9 +172,9 @@ void LineCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
-		"line", m_line,
+		"line", reinterpret_cast<const char*>(m_line.data()),
 		"wait", m_wait
 		);
 
@@ -179,7 +183,7 @@ void LineCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-KeyCommad::KeyCommad(const char* description, int wait, SPKEYS keyCode)
+KeyCommad::KeyCommad(const char8_t* description, int wait, SPKEYS keyCode)
 :InputCommand(description, wait)
 , m_keyCode(keyCode)
 {
@@ -198,7 +202,7 @@ void KeyCommad::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"keycode", int(m_keyCode),
 		"wait", m_wait
@@ -209,12 +213,12 @@ void KeyCommad::print(std::ostream& outputStream)
 
 //====================================================================
 
-UnicodeCommand::UnicodeCommand(const char* description, int wait, const std::string& codePoint)
+UnicodeCommand::UnicodeCommand(const char8_t* description, int wait, const char8_t* codePoint)
 :InputCommand(description, wait)
 , m_codePoint(codePoint)
 {
 	m_cmd=[this](){
-		s_KeyboardEmulator->unicodeCharacter(m_codePoint.c_str());
+		s_KeyboardEmulator->unicodeCharacter(m_codePoint.data());
 	};
 }
 
@@ -228,9 +232,9 @@ void UnicodeCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
-		"codePoint", m_codePoint,
+		"codePoint", reinterpret_cast<const char*>(m_codePoint.data()),
 		"wait", m_wait
 		);
 
@@ -239,13 +243,12 @@ void UnicodeCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-ShortcutCommand::ShortcutCommand(const char* description, int wait, const std::string& shortcut)
+ShortcutCommand::ShortcutCommand(const char8_t* description, int wait, const KeyCombo& shortcutCombo)
 :InputCommand(description, wait)
-, m_shortcut(shortcut)
+, m_shortcutCombo(shortcutCombo)
 {
-	ComboStringParser shortcutObj(m_shortcut);
-	m_cmd=[shortcutObj](){
-		s_KeyboardEmulator->shortcut(shortcutObj);
+	m_cmd=[this](){
+		s_KeyboardEmulator->shortcut(m_shortcutCombo);
 	};
 }
 
@@ -255,13 +258,21 @@ void ShortcutCommand::print(std::ostream& outputStream)
 {
 	int ID=static_cast<int>(CommandTypes::Shortcut);
 
+	std::string shortcutStr;
+	for(int i=0; i<MAX_HID_CODES; i++){
+		if(i>0){
+			shortcutStr.append(":");
+		}
+		shortcutStr.append(std::to_string(m_shortcutCombo[i]));	
+	}
+
 	SimpleSerialization json;
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
-		"shortcut", m_shortcut,
+		"shortcut", shortcutStr,
 		"wait", m_wait
 		);
 	json.dump(outputStream);
@@ -269,14 +280,14 @@ void ShortcutCommand::print(std::ostream& outputStream)
 
 //--------------------------------------------------------------------
 
-ShortcutCommand* ShortcutCommand::Builder(const char* description, int wait, const char* shortcut)
+ShortcutCommand* ShortcutCommand::Builder(const char8_t* description, int wait, const KeyCombo& shortcutCombo)
 {
-	return new ShortcutCommand(description, wait, shortcut);
+	return new ShortcutCommand(description, wait, shortcutCombo);
 }
 
 //====================================================================
 
-MoveMouseCommand::MoveMouseCommand(const char* description, int wait, int x, int y, const char* windowName)
+MoveMouseCommand::MoveMouseCommand(const char8_t* description, int wait, int x, int y, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_x(x)
@@ -288,7 +299,6 @@ MoveMouseCommand::MoveMouseCommand(const char* description, int wait, int x, int
 			m_statusCode=ExitCode::OUT_OF_BOUND;
 			if(isTargetValid(m_x, m_y)){
 				m_statusCode=ExitCode::OK;
-				//dbg("move command to: ", m_absoluteX, " : ", m_absoluteY);
 				s_MouseEmulator->go2Position(m_absoluteX, m_absoluteY);
 			}
 		}
@@ -305,7 +315,7 @@ void MoveMouseCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"x", m_x,
 		"y", m_y,
@@ -318,7 +328,7 @@ void MoveMouseCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-MouseBtnCommand::MouseBtnCommand(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
+MouseBtnCommand::MouseBtnCommand(const char8_t* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_x(x)
@@ -349,7 +359,7 @@ void MouseBtnCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"x", m_x,
 		"y", m_y,
@@ -363,7 +373,7 @@ void MouseBtnCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-DoubleClickCommand::DoubleClickCommand(const char* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
+DoubleClickCommand::DoubleClickCommand(const char8_t* description, int wait, int x, int y, MOUSE_BTN btn, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_x(x)
@@ -393,7 +403,7 @@ void DoubleClickCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"x", m_x,
 		"y", m_y,
@@ -406,7 +416,7 @@ void DoubleClickCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-MouseSelectCommand::MouseSelectCommand(const char* description, int wait, uint posX, uint posY, int width, int height, const char* windowName)
+MouseSelectCommand::MouseSelectCommand(const char8_t* description, int wait, uint posX, uint posY, int width, int height, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_posX(posX)
@@ -437,7 +447,7 @@ void MouseSelectCommand::print(std::ostream& outputStream)
 
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"posX", m_posX,
 		"posY", m_posY,
@@ -451,7 +461,7 @@ void MouseSelectCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-MouseDragCommand::MouseDragCommand(const char* description, int wait, int startX, int startY, int endX, int endY, const char* windowName)
+MouseDragCommand::MouseDragCommand(const char8_t* description, int wait, int startX, int startY, int endX, int endY, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_startX(startX)
@@ -481,7 +491,7 @@ MouseDragCommand::MouseDragCommand(const char* description, int wait, int startX
 
 //--------------------------------------------------------------------
 
-MouseDragCommand::MouseDragCommand(const char* description, int wait, int endX, int endY, const char* windowName)
+MouseDragCommand::MouseDragCommand(const char8_t* description, int wait, int endX, int endY, const char* windowName)
 :InputCommand(description, wait)
 , WindowOffset(windowName)
 , m_startX(-1)
@@ -521,7 +531,7 @@ void MouseDragCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", ID,
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"startX", m_startX,
 		"startY", m_startY,
@@ -536,7 +546,7 @@ void MouseDragCommand::print(std::ostream& outputStream)
 
 //====================================================================
 
-CtrlCommand::CtrlCommand(const char* description, const std::string& baseImageName, const char* roiStr, const char* windowName, bool removeImg)
+CtrlCommand::CtrlCommand(const char8_t* description, const std::string& baseImageName, const char* roiStr, const char* windowName, bool removeImg)
 :BaseCommand(description)
 , WindowOffset(windowName)
 , m_baseImageName(baseImageName)
@@ -663,7 +673,7 @@ void CtrlCommand::print(std::ostream& outputStream)
 	
 	json.ToString(
 		"ID", static_cast<int>(CommandTypes::Ctrl),
-		"description", m_description,
+		"description", reinterpret_cast<const char*>(m_description.data()),
 		"run", m_run,
 		"baseImageName", m_baseImageName,
 		"roiStr", m_roiStr,

@@ -23,12 +23,14 @@ class ErrorReporting
 	public:
 		~ErrorReporting()=default;
 		const char* getLastError() const;
+		int getErrorCode() const;
 
 		void clearError();
 
 	protected:
 		void setLastError(std::function<bool(void)> cbk, const char* msg="");
-	
+		void setErrorCode(int code);
+
 	private:
 		static const int c_errorBufSize=124;
 		char m_errorMsgBuf[c_errorBufSize];
@@ -40,6 +42,20 @@ class ErrorReporting
 inline const char* ErrorReporting::getLastError() const
 {
 	return m_errorMsgBuf;
+}
+
+//--------------------------------------------------------------------
+
+inline int ErrorReporting::getErrorCode() const
+{
+	return m_lastError;
+}
+
+//--------------------------------------------------------------------
+
+inline void ErrorReporting::setErrorCode(int code)
+{
+	m_lastError=code;
 }
 
 //--------------------------------------------------------------------

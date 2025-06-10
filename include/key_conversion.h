@@ -17,12 +17,12 @@
 **********************************************************************/
 #ifndef _KEY_CONVERSION_H
 #define _KEY_CONVERSION_H
+#include "key_index.h"
+#include "keycombo.h"
 
 #include <string> // for uint
 #include <map>
 #include <functional>
-
-#define MAX_HID_CODES 6 
 
 //====================================================================
 
@@ -44,7 +44,7 @@ enum class SPKEYS
 	F10,
 	F11,
 	F12,
-	SYSRQ,
+	PRINT_SCREEN,
 	BACKSPACE,
 	ENTER,
 	INSERT,
@@ -67,6 +67,7 @@ enum class SPKEYS
 	LEFTMETA,
 	RIGHTMETA,
 	TAB,
+	NUMLOCK,
 	_LAST,
 };
 
@@ -104,56 +105,6 @@ inline uint KeyConversion::getKeyCode<TinyUSBKeyboard>(SPKEYS keyCode)
 	return getKeyCode(keyCode, [](uint uinputKey, uint tinyusbKey){
 		return tinyusbKey;
 	});
-}
-
-//====================================================================
-
-class ComboStringParser final
-{
-	public:
-		ComboStringParser(const std::string& shortcutStr);
-		ComboStringParser(const ComboStringParser& other);
-		ComboStringParser(ComboStringParser&& other);
-		~ComboStringParser();
-		ComboStringParser& operator=(const ComboStringParser& other);
-
-		uint size() const;
-		const char* getPart(uint i) const;
-		bool toKeycode(const std::map<std::string, int>* shortcutParserKeyMapPtr, int (&keyCodes)[MAX_HID_CODES]) const;
-
-	private:
-		char* m_str;
-		char* m_parts[MAX_HID_CODES];
-		uint m_count;
-
-		static bool trim(const std::string& str, size_t offset, size_t& pl, size_t& pr);
-};
-
-//--------------------------------------------------------------------
-
-inline ComboStringParser::~ComboStringParser()
-{
-	if(m_str){
-		delete[] m_str;
-		m_str=nullptr;
-	}
-}
-
-//--------------------------------------------------------------------
-
-inline uint ComboStringParser::size() const
-{
-	return m_count;
-}
-
-//--------------------------------------------------------------------
-
-inline const char* ComboStringParser::getPart(uint i) const
-{
-	if(i<m_count){
-		return m_parts[i];
-	}
-	return nullptr;
 }
 
 //====================================================================

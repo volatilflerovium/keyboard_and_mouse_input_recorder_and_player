@@ -497,3 +497,17 @@ void removeOrphanImgs(wxChoice* fileDropDown)
 
 //====================================================================
 
+int getLedMask()
+{
+	int result=0;
+	exeCommand<128>("xset q | grep LED", [&result](const std::string& str){
+		size_t pos=str.find("LED mask:");
+		if(pos!=std::string::npos){
+			result=std::atoi(str.substr(pos+std::strlen("LED mask:")).c_str());
+		}
+	});
+	return result;
+}
+
+//====================================================================
+

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project("K_and_M_recorder_player")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -99,6 +99,8 @@ add_executable(
 	src/progress_bar.cpp
 	src/wx_worker.cpp
 	src/light_image_panel.cpp
+	src/keyboard_configuration.cpp
+	src/configurator.cpp
 )
 
 target_link_libraries(

@@ -40,7 +40,7 @@ void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, co
 	SimpleUnserialization<20> cmdData(commandStr.c_str(), SEPARATOR);
 
 	CommandTypes commandID=static_cast<CommandTypes>(cmdData.get<int>("ID"));
-	const char* description=cmdData.get<const char*>("description");
+	const char8_t* description=cmdData.get<const char8_t*>("description");
 	bool run=cmdData.get<bool>("run");
 	if(commandID==CommandTypes::Ctrl){
 		CtrlCommand* cmdPtr=new CtrlCommand(
@@ -69,13 +69,13 @@ void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, co
 		else if(commandID==CommandTypes::KeyboardLine){
 			auto cmdPtr=CmdBuilder<CommandTypes::KeyboardLine>::Builder(
 				run, description,
-				cmdData.get<int>("wait"), cmdData.get<const char*>("line"));
+				cmdData.get<int>("wait"), cmdData.get<const char8_t*>("line"));
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
 		}
 		else if(commandID==CommandTypes::KeyboardText){
 			auto cmdPtr=CmdBuilder<CommandTypes::KeyboardText>::Builder(
 				run, description,
-				cmdData.get<int>("wait"), cmdData.get<const char*>("text"));
+				cmdData.get<int>("wait"), cmdData.get<const char8_t*>("text"));
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
 		}
 		else if(commandID==CommandTypes::MouseBtn){
@@ -112,15 +112,22 @@ void ParserBuilder(CmdScrolledWindow* cmdscrolledWindowPtr, bool indentation, co
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
 		}
 		else if(commandID==CommandTypes::Shortcut){
+			CstrSplit<6> parts(cmdData.get<const char*>("shortcut"), ":");
+			KeyCombo combo;
+			for(int i=0; i<MAX_HID_CODES; i++){
+				combo.pushBack(std::atoi(parts[i]));
+				dbg(std::atoi(parts[i]));
+			}	
+			
 			auto cmdPtr=CmdBuilder<CommandTypes::Shortcut>::Builder(
 				run, description, cmdData.get<int>("wait"),
-				cmdData.get<const char*>("shortcut"));
+				combo);
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
 		}
 		else if(commandID==CommandTypes::Unicode){
 			auto cmdPtr=CmdBuilder<CommandTypes::Unicode>::Builder(
 				run, description, cmdData.get<int>("wait"),
-				cmdData.get<const char*>("codePoint"));
+				cmdData.get<const char8_t*>("codePoint"));
 			cmdscrolledWindowPtr->addCommand(cmdPtr, indentation);
 		}
 		else if(commandID==CommandTypes::DoubleClick){

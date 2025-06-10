@@ -44,6 +44,7 @@ void ErrorReporting::setLastError(std::function<bool(void)> cbk, const char* msg
 void ErrorReporting::clearError()
 {
 	std::memset(m_errorMsgBuf, 0, c_errorBufSize);
+	m_lastError=0;
 }
 
 //====================================================================

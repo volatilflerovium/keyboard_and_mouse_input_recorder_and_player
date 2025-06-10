@@ -69,7 +69,8 @@ class BasicPopup : public wxFrame
 		/* This is called when the window popup.
 		 * */
 		virtual void OnPopup()
-		{}
+		{
+		}
 
 		BasicPopup(wxWindow *parent, const char* title, bool)
 		:wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize,
@@ -132,7 +133,6 @@ class PopupWrapper
 		}
 
 		bool isShown();
-
 
 	private:
 		BasicPopup* m_popupPtr;

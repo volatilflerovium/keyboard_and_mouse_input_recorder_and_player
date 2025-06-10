@@ -37,6 +37,7 @@ namespace WX
 		SUBMIT_INPUT,
 		SET_CHOICE,
 		TIMER,
+		CONFIG_TIMER,
 		ROI_RADIO,
 		DISPLAY_KBOARD,
 		LOOP_BUTTON,
@@ -151,7 +152,7 @@ enum class InterfaceLink
 	_LAST,
 };
 
-enum HID_TARGET
+enum class HID_TARGET
 {
 	NONE,
 	UINPUT,

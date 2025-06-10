@@ -194,7 +194,7 @@ struct FromString
 template<>
 struct FromString<int>
 {
-	static int getFrom(const char* str)
+	static int getFrom(const char* str, int)
 	{
 		return std::atoi(str);
 	}
@@ -203,7 +203,7 @@ struct FromString<int>
 template<>
 struct FromString<float>
 {
-	static int getFrom(const char* str)
+	static int getFrom(const char* str, int)
 	{
 		return std::atof(str);
 	}
@@ -212,7 +212,7 @@ struct FromString<float>
 template<>
 struct FromString<const char*>
 {
-	static const char* getFrom(const char* str)
+	static const char* getFrom(const char* str, int)
 	{
 		return str;
 	}
@@ -221,16 +221,16 @@ struct FromString<const char*>
 template<>
 struct FromString<std::string>
 {
-	static std::string getFrom(const char* str)
+	static std::string getFrom(const char* str, int length)
 	{
-		return str;
+		return std::string(str, length);
 	}
 };
 
 template<>
 struct FromString<bool>
 {
-	static bool getFrom(const char* str)
+	static bool getFrom(const char* str, int)
 	{
 		if(std::memcmp(str, "true", 4)==0){
 			return true;
@@ -239,6 +239,23 @@ struct FromString<bool>
 	}
 };
 
+template<>
+struct FromString<std::u8string>
+{
+	static std::u8string getFrom(const char* str, int)
+	{
+		return reinterpret_cast<const char8_t*>(str);
+	}
+};
+
+template<>
+struct FromString<const char8_t*>
+{
+	static const char8_t* getFrom(const char* str, int)
+	{
+		return reinterpret_cast<const char8_t*>(str);
+	}
+};
 //====================================================================
 
 class SimpleSerialization
@@ -292,7 +309,7 @@ class SimpleUnserialization
 			size_t keySize=std::strlen(key);
 			for(size_t i=0; i<m_cstrSplit.dataSize(); i+=2){
 				if(std::memcmp(m_cstrSplit[i], key, keySize*sizeof(char))==0){
-					return FromString<T>::getFrom(m_cstrSplit[i+1]);
+					return FromString<T>::getFrom(m_cstrSplit[i+1], m_cstrSplit.chunkSize(i+1));
 				}
 			}
 			std::string excp="Not conversion rule for type of key: ";

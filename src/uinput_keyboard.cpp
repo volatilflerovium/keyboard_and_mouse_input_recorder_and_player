@@ -14,7 +14,6 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "uinput_keyboard.h"
-#include "key_map.h"
 #include "debug_utils.h"
 
 #include <thread>
@@ -30,8 +29,9 @@
 UinputKeyboard::UinputKeyboard()
 : m_fd(-1)
 {
-	m_shortcutParserKeyMapPtr=&shortcutParserKeyMap;
 	reload();
+
+	m_keyMap=&uinputKeyMap;
 }
 
 //--------------------------------------------------------------------
@@ -121,21 +121,35 @@ void UinputKeyboard::sendKey(int hidCode1, int hidCode2)
 
 //--------------------------------------------------------------------
 
-void UinputKeyboard::sendKey(int hidCode1, int hidCode2, int hidCode3, int hidCode4, int hidCode5, int hidCode6)
+void UinputKeyboard::sendKey(int hidCode1, int hidCode2, int hidCode3)
+{
+   emit(EV_KEY, hidCode1, 1);
+   emit(EV_KEY, hidCode2, 1);
+   emit(EV_KEY, hidCode3, 1);
+	emit(EV_SYN, SYN_REPORT, 0);
+	emit(EV_KEY, hidCode1, 0);
+	emit(EV_KEY, hidCode2, 0);
+	emit(EV_KEY, hidCode3, 0);
+	emit(EV_SYN, SYN_REPORT, 0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(15));
+}
+
+//--------------------------------------------------------------------
+
+void UinputKeyboard::sendKey(const KeyCombo& keyCodes)
 {
 	int max=0;
-	int codes[]={hidCode1, hidCode2, hidCode3, hidCode4, hidCode5, hidCode6};
    for(int i=0; i<MAX_HID_CODES; i++){
-		if(codes[i]<0){
+		if(keyCodes[i]<0){
+			max=i;
 			break;
 		}
-		max=i+1;
-		emit(EV_KEY, codes[i], 1);		
+		emit(EV_KEY, keyCodes[i], 1);		
 	}
 	emit(EV_SYN, SYN_REPORT, 0);
 
 	for(int i=0; i<max; i++){
-		emit(EV_KEY, codes[i], 0);
+		emit(EV_KEY, keyCodes[i], 0);
 	}
 	emit(EV_SYN, SYN_REPORT, 0);
 
@@ -153,10 +167,10 @@ bool UinputKeyboard::isActive()
 
 void UinputKeyboard::addWhiteCharacters()
 {
-	addCombo('\n', KEY_ENTER);
-	addCombo(' ', KEY_SPACE);
-	addCombo('	', KEY_TAB);
-	addCombo('\t', KEY_TAB);
+	addCombo(UTF8Char(u8"\n"), KEY_ENTER);
+	addCombo(UTF8Char(u8" "), KEY_SPACE);
+	addCombo(UTF8Char(u8"	"), KEY_TAB);
+	addCombo(UTF8Char(u8"\t"), KEY_TAB);
 }
 
 //--------------------------------------------------------------------

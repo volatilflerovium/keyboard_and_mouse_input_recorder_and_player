@@ -16,9 +16,7 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "key_conversion.h"
-#include "tinyusb_key_map.h"
-
-#include <cstring> 
+#include "tinyusb_keymap.h"
 #include <linux/uinput.h>
 
 //====================================================================
@@ -83,7 +81,7 @@ uint KeyConversion::getKeyCode(SPKEYS keyCode, ConvCode _getKeyCode)
 				case SPKEYS::F12:
 					return _getKeyCode(KEY_F12, HID_KEY_F12);
 				break;
-				case SPKEYS::SYSRQ:
+				case SPKEYS::PRINT_SCREEN:
 					return _getKeyCode(KEY_SYSRQ, HID_KEY_PRINT_SCREEN);
 				break;
 				case SPKEYS::BACKSPACE:
@@ -168,6 +166,9 @@ uint KeyConversion::getKeyCode(SPKEYS keyCode, ConvCode _getKeyCode)
 				case SPKEYS::TAB:
 					return _getKeyCode(KEY_TAB, HID_KEY_TAB);
 				break;
+				case SPKEYS::NUMLOCK:
+					return _getKeyCode(KEY_NUMLOCK, HID_KEY_NUM_LOCK);
+				break;
 				default:
 					return 0;
 				break;
@@ -175,139 +176,6 @@ uint KeyConversion::getKeyCode(SPKEYS keyCode, ConvCode _getKeyCode)
 		}
 	}
 	return 0;
-}
-
-//====================================================================
-
-ComboStringParser::ComboStringParser(const std::string& shortcutStr)
-:m_str(nullptr)
-, m_count(0)
-{
-	m_str=new char[1+shortcutStr.length()];
-	std::memset(m_str, 0, sizeof(char)*(1+shortcutStr.length()));
-	int pos=0;
-	size_t pl=0;
-	size_t pr=0;
-	size_t pt=0;
-	while(pl!=std::string::npos){
-		pl=shortcutStr.find_first_not_of(" +", pr);// ' ' and '+'
-		pr=shortcutStr.find(" ", pl);
-		pt=shortcutStr.find("+", pl);
-		if(pr==std::string::npos || pr>pt){
-			pr=pt;
-		}
-
-		if(pl!=std::string::npos){	
-			std::string tmp;
-			size_t ql=0;
-			size_t qr=(pr!=std::string::npos)? pr : shortcutStr.length();
-			
-			if(trim(shortcutStr, pl, ql, qr)){
-				if(qr>pr){
-					qr=pr;
-				}
-				tmp=shortcutStr.substr(ql, qr-ql);
-				m_parts[m_count++]=m_str+pos;
-				std::memcpy(m_str+pos, tmp.c_str(), tmp.length());
-				pos+=tmp.length()+1;
-			}
-		}
-	}
-}
-
-//--------------------------------------------------------------------
-
-ComboStringParser::ComboStringParser(const ComboStringParser& other)
-:m_count(other.m_count)
-{
-	uint length=0;
-	for(uint i=0; i<m_count; i++){
-		length+=std::strlen(other.m_parts[i])+1;
-	}
-
-	m_str=new char[length];
-	char* ptr=m_str;
-	std::memcpy(m_str, other.m_str, sizeof(char)*length);
-	for(uint i=0; i<m_count; i++){
-		m_parts[i]=ptr;
-		ptr+=std::strlen(other.m_parts[i])+1;
-	}
-}
-
-//--------------------------------------------------------------------
-
-ComboStringParser& ComboStringParser::operator=(const ComboStringParser& other)
-{
-	m_count=other.m_count;
-	if(m_str){
-		delete[] m_str;
-		m_str=nullptr;
-	}
-
-	if(m_count>0){
-		uint length=0;
-		for(uint i=0; i<m_count; i++){
-			length+=std::strlen(other.m_parts[i])+1;
-		}
-		char* ptr=m_str;
-		m_str=new char[length];
-		std::memcpy(m_str, other.m_str, sizeof(char)*length);
-		for(uint i=0; i<m_count; i++){
-			m_parts[i]=ptr;
-			ptr+=std::strlen(other.m_parts[i])+1;
-		}
-	}
-	return *this;
-}
-
-//--------------------------------------------------------------------
-
-ComboStringParser::ComboStringParser(ComboStringParser&& other)
-:m_str(other.m_str)
-, m_count(other.m_count)
-{
-	for(uint i=0; i<m_count; i++){
-		m_parts[i]=other.m_parts[i];
-	}
-	other.m_str=nullptr;
-	other.m_count=0;
-}
-
-//--------------------------------------------------------------------
-
-bool ComboStringParser::trim(const std::string& str, size_t offset, size_t& pl, size_t& pr)
-{
-	pl=str.find_first_not_of(' ', offset);
-	if(pl!=std::string::npos){
-		size_t tmp=pr;
-		pr=str.find_first_of(' ', pl);
-		if(pr==std::string::npos){
-			pr=tmp;
-		}
-	}
-	return pl!=std::string::npos;
-}
-
-//--------------------------------------------------------------------
-
-bool ComboStringParser::toKeycode(const std::map<std::string, int>* shortcutParserKeyMapPtr,
-	int (&keyCodes)[MAX_HID_CODES]) const
-{
-	keyCodes[0]=-1;
-	keyCodes[1]=-1;
-	keyCodes[2]=-1;
-	keyCodes[3]=-1;
-	keyCodes[4]=-1;
-	keyCodes[5]=-1;
-	uint idx=0;
-	std::map<std::string, int>::const_iterator it;
-	for(uint i=0; i<m_count; i++){
-		it=shortcutParserKeyMapPtr->find(getPart(i));
-		if(it!=shortcutParserKeyMapPtr->end()){
-			keyCodes[idx++]=it->second;
-		}
-	}
-	return idx>0;
 }
 
 //====================================================================

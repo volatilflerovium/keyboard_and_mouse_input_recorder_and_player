@@ -110,6 +110,10 @@ std::string getImgPath(const char* file="");
 
 //====================================================================
 
+int getLedMask();
+
+//====================================================================
+
 inline std::string getImgPath(const std::string& file)
 {
 	return getImgPath(file.c_str());

@@ -15,9 +15,8 @@
 **********************************************************************/
 #ifndef _UINPUT_KEYBOARD_H
 #define _UINPUT_KEYBOARD_H
-
 #include "keyboard_emulator.h"
-#include "key_map.h"
+#include "uinput_keymap.h"
 
 #include "key_conversion.h"
 
@@ -39,6 +38,8 @@ class UinputKeyboard : public KeyboardEmulatorI
 		virtual void loadPrintableCharacters() override;
 		virtual void commandKey(SPKEYS k) override;
 
+		//virtual bool configurete(int keboardKeyCode=-1) override;
+
 	private:
 		uinput_setup m_usetup={0};
 		input_event m_inputEvent={0};
@@ -49,7 +50,8 @@ class UinputKeyboard : public KeyboardEmulatorI
 
 		virtual void sendKey(int keyCode) override;
 		virtual void sendKey(int hidCode1, int hidCode2) override;
-		virtual void sendKey(int hidCode1, int hidCode2, int hidCode3, int hidCode4=-1, int hidCode5=-1, int hidCode6=-1) override;
+		virtual void sendKey(int hidCode1, int hidCode2, int hidCode3) override;
+		virtual void sendKey(const KeyCombo& keyCodes) override;
 
 		virtual void addWhiteCharacters() override;
 		virtual void prepareUnicodeInput() override;
@@ -59,7 +61,7 @@ class UinputKeyboard : public KeyboardEmulatorI
 
 inline void UinputKeyboard::loadPrintableCharacters()
 {
-	KeyboardEmulatorI::loadPrintableCharacters("printable_characters.txt", uinputKeyMap);
+	KeyboardEmulatorI::loadPrintableCharacters("printable_characters.txt");
 }
 
 //--------------------------------------------------------------------
@@ -69,6 +71,6 @@ inline void UinputKeyboard::commandKey(SPKEYS k)
 	sendKey(KeyConversion::getKeyCode<UinputKeyboard>(k));
 }
 
-//--------------------------------------------------------------------
+//====================================================================
 
 #endif

@@ -21,44 +21,26 @@
 
 TinyUSBKeyboard::TinyUSBKeyboard()
 {
-	m_shortcutParserKeyMapPtr=&hidShortcutParserKeyMap;
-
 	setLastError([this](){
 		return !s_connector->isActive();
 	});
+
+	m_keyMap=&tinyusbKeyMap;
 }
 
 //--------------------------------------------------------------------
 
-void TinyUSBKeyboard::sendKey(int keyCode)
+void TinyUSBKeyboard::sendKey(const KeyCombo& keyCodes)
 {
-	uint8_t data[3]={0xE8, static_cast<uint8_t>(keyCode), 0xE9};
-	sendData(data, 3);
-}
-
-//--------------------------------------------------------------------
-
-void TinyUSBKeyboard::sendKey(int hidCode1, int hidCode2)
-{
-	uint8_t data[4]={0xE8, static_cast<uint8_t>(hidCode1), static_cast<uint8_t>(hidCode2), 0xE9};
-	sendData(data, 4);
-}
-
-//--------------------------------------------------------------------
-
-void TinyUSBKeyboard::sendKey(int hidCode1, int hidCode2, int hidCode3, int hidCode4, int hidCode5, int hidCode6)
-{
-	int rawData[]={hidCode1, hidCode2, hidCode3, hidCode4, hidCode5, hidCode6};
-
 	uint8_t data[MAX_HID_CODES+2]={0xE8, 0xE9, 0xE9, 0xE9, 0xE9, 0xE9, 0xE9, 0xE9};
 
 	int dataSize=0;
 	for(int i=0; i<MAX_HID_CODES; i++){
-		if(rawData[i]<0){
+		if(keyCodes[i]<0){
+			dataSize=i;
 			break;
 		}
-		dataSize=i+1;
-		data[1+i]=static_cast<uint8_t>(rawData[i]);
+		data[1+i]=static_cast<uint8_t>(keyCodes[i]);
 	}
 
 	if(dataSize>0){
@@ -78,10 +60,10 @@ bool TinyUSBKeyboard::isActive()
 
 void TinyUSBKeyboard::addWhiteCharacters()
 {
-	addCombo('\n', HID_KEY_ENTER);
-	addCombo(' ', HID_KEY_SPACE);
-	addCombo('	', HID_KEY_TAB);
-	addCombo('\t', HID_KEY_TAB);
+	addCombo(UTF8Char(u8"\n"), HID_KEY_ENTER);
+	addCombo(UTF8Char(u8" "), HID_KEY_SPACE);
+	addCombo(UTF8Char(u8"	"), HID_KEY_TAB);
+	addCombo(UTF8Char(u8"\t"), HID_KEY_TAB);
 }
 
 //--------------------------------------------------------------------

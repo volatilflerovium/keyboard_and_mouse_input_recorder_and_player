@@ -15,88 +15,98 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "keyboard_emulator.h"
-
-#include "key_map.h"
 #include "utilities.h"
 #include "debug_utils.h"
+#include "cstr_split.h"
 
 #include <fstream>
 
 //====================================================================
 
-void KeyboardEmulatorI::addCombo(char c, int k1, int k2, int k3, int k4, int k5)
+KeyboardEmulatorI::KeyboardEmulatorI()
 {
-	//Let's allow overide of an existing combo
-	if(k2<0){
-		m_combos[c]=[k1](KeyboardEmulatorI* kboard){
-			kboard->sendKey(k1);
+	if(existPath(SHOTCUT_MAPPING)){
+		std::ifstream shortcutMappingFile(getFilePath(SHOTCUT_MAPPING), std::ifstream::in);
+		if(shortcutMappingFile.is_open()){
+			std::string dataLine;
+			while(std::getline(shortcutMappingFile, dataLine)){
+				CstrSplit<5> parts(dataLine.c_str(), " ");
+				m_shortcuts[std::atoi(parts[0])]={std::atoi(parts[1]), reinterpret_cast<const char8_t*>(parts[2])};
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------------
+
+std::function<void(KeyboardEmulatorI*)> KeyboardEmulatorI::comboBuilder(const KeyCombo& keyCodes)
+{	
+	int k0=keyCodes[0];
+
+	if(keyCodes[1]<0){
+		return [k0](KeyboardEmulatorI* kboard){
+			kboard->sendKey(k0);
 		};
-		return;
 	}
 
-	if(k3<0){
-		m_combos[c]=[k1, k2](KeyboardEmulatorI* kboard){
-			kboard->sendKey(k1, k2);
+	int k1=keyCodes[1];
+	if(keyCodes[2]<0){
+		return [k0, k1](KeyboardEmulatorI* kboard){
+			kboard->sendKey(k0, k1);
 		};
-		return;
 	}
-	m_combos[c]=[=](KeyboardEmulatorI* kboard){
-		kboard->sendKey(k1, k2, k3, k4, k5);
+
+	int k2=keyCodes[2];
+	if(keyCodes[3]<0){
+		return [k0, k1, k2](KeyboardEmulatorI* kboard){
+			kboard->sendKey(k0, k1);
+		};
+	}
+
+	return [keyCodes](KeyboardEmulatorI* kboard){
+		kboard->sendKey(keyCodes);
 	};
 }
 
 //--------------------------------------------------------------------
 
-static char printableCharacterParser(const std::string& str, int* values, const std::map<std::string, int>& keyMap)
+UTF8Char KeyboardEmulatorI::printableCharacterParser(const char* str, std::function<void(KeyboardEmulatorI*)>& combo1, std::function<void(KeyboardEmulatorI*)>& combo2, const std::map<std::string, int>* keyMap)
 {
-	size_t pl=0;
-	size_t pr=0;
-	const char separator=' ';
-	char key=0;
-	int k=0;
-	
-	while(pl!=std::string::npos){
-		pl=str.find_first_not_of(separator, pr);
-		pr=str.find(separator, pl);
-		if(pl!=std::string::npos){
-			if(pr-pl==1 && key==0){
-				key=str[pl];
-			}
-			else{
-				std::string tmp=str.substr(pl, pr-pl);
-				std::map<std::string, int>::const_iterator it=keyMap.find(tmp);
-				
-				if(it!=keyMap.end()){
-					values[k++]=it->second;
-				}
+	CstrSplit<3> breaker2(str, PRINT_CHAR_SEPARATOR);
+
+	UTF8Char key(breaker2[0]);
+
+	for(size_t i=1; i<breaker2.dataSize(); i++){
+		CstrSplit<MAX_HID_CODES> breaker3(breaker2[i], " ");
+		int values[MAX_HID_CODES]={-1, -1, -1, -1, -1, -1};
+		for(size_t j=0; j<breaker3.dataSize(); j++){
+			std::string tmp(breaker3[j]);
+			std::map<std::string, int>::const_iterator it=keyMap->find(tmp);
+			
+			if(it!=keyMap->end()){
+				values[j]=it->second;
 			}
 		}
-
-		if(pr==std::string::npos){
-			return key;
+		if(i==1){
+			combo1=KeyboardEmulatorI::comboBuilder(values);
+		}
+		else{
+			combo2=KeyboardEmulatorI::comboBuilder(values);
 		}
 	}
-	return 0;
+
+	return key;
 }
 
 //--------------------------------------------------------------------
 
-void KeyboardEmulatorI::loadPrintableCharacters(const char* fileName, const std::map<std::string, int>& keyMap)
+void KeyboardEmulatorI::loadPrintableCharacters(const char* fileName)
 {
 	if(isActive()){
 		addWhiteCharacters();
 
-		std::ifstream characterTable;
-		
-		std::string filePath=resourcePath(fileName);
-		
-		characterTable.open(filePath, std::ifstream::in);
+		std::ifstream characterTable(getFilePath(PRINTABLE_CHARACTERS), std::ifstream::in);
 		if(!characterTable.is_open()){
-			characterTable.close();
-			filePath.append(" : not found");
-			setLastError([this](){
-				return true;
-			}, filePath.c_str());
 			return;
 		}
 
@@ -106,14 +116,60 @@ void KeyboardEmulatorI::loadPrintableCharacters(const char* fileName, const std:
 			if(combo.length()==0){
 				continue;
 			}
-			int values[5]={-1, -1, -1, -1, -1};
-			char c=printableCharacterParser(combo, values, keyMap);
-			if(c>0){
-				addCombo(c, values[0], values[1], values[2], values[3], values[4]);
+
+			std::function<void(KeyboardEmulatorI*)> combo1=nullptr;
+			std::function<void(KeyboardEmulatorI*)> combo2=nullptr;
+
+			UTF8Char key=printableCharacterParser(combo.c_str(), combo1, combo2, m_keyMap);
+			if(combo2){
+				addCombo(key, [combo1, combo2](KeyboardEmulatorI* kboard){
+					combo1(kboard);
+					combo2(kboard);
+				});
+			}
+			else{
+				addCombo(key, combo1);
 			}
 		}
 		characterTable.close();
 	}
+}
+
+//--------------------------------------------------------------------
+
+void KeyboardEmulatorI::shortcut(const KeyCombo& shortcut)
+{
+	int max=0;
+	KeyCombo keyCodes;
+	for(int i=0; i<MAX_HID_CODES; i++){
+		if(shortcut[i]<0){
+			max=i;
+			break;
+		}
+		const std::string& str=keyScan[m_shortcuts[shortcut[i]].first];
+
+		std::map<std::string, int>::const_iterator it=m_keyMap->find(str);
+			
+		if(it!=m_keyMap->end()){
+			keyCodes.pushBack(it->second);
+		}
+	}
+	if(max==1){
+		sendKey(keyCodes[0]);
+		return;
+	}
+
+	if(max==2){
+		sendKey(keyCodes[0], keyCodes[1]);
+		return;
+	}
+
+	if(max==3){
+		sendKey(keyCodes[0], keyCodes[1], keyCodes[2]);
+		return;
+	}
+
+	sendKey(keyCodes);
 }
 
 //====================================================================

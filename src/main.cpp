@@ -31,7 +31,6 @@ IMPLEMENT_APP(MyApp)
 
 bool MyApp::OnInit()
 {
-
 	RecorderPlayerKM* recorderPlayerGUI = new RecorderPlayerKM(wxT("kmRecorderAndPlayer"));
 
 	recorderPlayerGUI->Show(true);

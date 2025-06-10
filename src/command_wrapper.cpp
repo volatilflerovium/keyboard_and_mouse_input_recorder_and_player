@@ -107,14 +107,15 @@ void CommandPanel::init(bool indentation)
 
 	m_enableCmdCheck->SetValue(getCommand()->isActive());
 
-	wxString description=getCommand()->getDescription();
+	wxString description=wxString::FromUTF8(reinterpret_cast<const char*>(getCommand()->getDescription()));
+
 	m_description = new WX_TextCtrl(m_handlerPtr, wxID_ANY, description, wxDefaultPosition,
 	                      //wxDefaultSize,//
 	                      wxSize(-1, 23),
 	                      wxNO_BORDER);
 
 	m_description->setCallback([this](const char* val){		
-		getCommand()->updateDescription(val);
+		getCommand()->updateDescription(reinterpret_cast<const char8_t*>(val));
 	});
 
 	setTimeoutCtrl();

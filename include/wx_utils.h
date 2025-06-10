@@ -17,12 +17,20 @@
 **********************************************************************/
 #ifndef _WX_UTILS_H
 #define _WX_UTILS_H
+#include <string>
 
 #include <wx/gdicmn.h> 
 #include <wx/sizer.h>
 #include <wx/string.h>
 
 //====================================================================
+
+inline std::u8string wxString2u8String(const wxString& wxstr)
+{
+	wxCharBuffer buffer=wxstr.ToUTF8();
+
+	return std::u8string(reinterpret_cast<const char8_t*>(buffer.data()));
+}
 
 inline wxBoxSizer* BoxSizerH()
 {
