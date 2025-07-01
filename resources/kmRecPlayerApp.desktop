@@ -1,6 +1,8 @@
 [Desktop Entry]
+Name=kmRecorderAndPlayer
+Comment=Graphical tool for recording and playing keyboard and mouse input
+Terminal=false
 Type=Application
-Name=Keyboard and Mouse Recorder Player
 Exec=kmRecPlayerApp
 Icon=kmRecPlayerIcon
-Categories=Graphics;
+Categories=Development;

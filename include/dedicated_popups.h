@@ -209,11 +209,12 @@ class FileListPopup : public WX_Popup
 };
 
 //====================================================================
+class cmdPtr;
 
 class ResultPopup : public ExtendedPopup
 {
 	public:
-		ResultPopup(wxWindow* parent, const char* title, const std::string& baseImg);
+		ResultPopup(wxWindow* parent, const char* title, CtrlCommand* cmdPtr);
 		virtual ~ResultPopup()=default;
 
 		void loadBaseImg(const std::string& baseImg);
@@ -221,12 +222,24 @@ class ResultPopup : public ExtendedPopup
 	protected:
 		std::string m_baseImg;
 		std::string m_sampleImg;
+		CtrlCommand* m_ctrlCmdPtr;
 		wxRadioBox* m_swapScreenshotRadio;
 		ImagePanel* m_previewPanel;
 		wxBoxSizer* m_bodySizer;
 		wxBoxSizer* m_row;
+		wxBoxSizer* m_ctrlRow;
+		wxButton* m_replaceBtn;
+		ExtendedPopup* m_replaceImagePopup;
 		uint m_perc;
 
+		enum Target
+		{
+			ONE=0,
+			ALL,
+		};
+
+		void replaceImagePopupDialog();
+		void replaceImage(Target target);
 		void setLayout();
 };
 

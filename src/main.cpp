@@ -17,12 +17,12 @@
 
 sig_atomic_t signal_caught = 0;
 
-static RecorderPlayerKM* appGUI=nullptr;
+static RecorderPlayerKM* recorderPlayerGUI=nullptr;
 
 void sigint_handler(int sig)
 {	
-	if(appGUI){
-		wxDELETE(appGUI);
+	if(recorderPlayerGUI){
+		wxDELETE(recorderPlayerGUI);
 	}
 	exit(sig);
 }
@@ -31,15 +31,13 @@ IMPLEMENT_APP(MyApp)
 
 bool MyApp::OnInit()
 {
-	RecorderPlayerKM* recorderPlayerGUI = new RecorderPlayerKM(wxT("kmRecorderAndPlayer"));
+	recorderPlayerGUI=new RecorderPlayerKM(wxT("kmRecorderAndPlayer"));
 
 	recorderPlayerGUI->Show(true);
 
 	if(wxApp::argc==2){
 		recorderPlayerGUI->CommandLineInputFile(wxApp::argv[1]);
 	}
-
-	appGUI=recorderPlayerGUI;
 
 	signal(SIGINT, &sigint_handler);
 		

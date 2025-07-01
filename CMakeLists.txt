@@ -101,6 +101,7 @@ add_executable(
 	src/light_image_panel.cpp
 	src/keyboard_configuration.cpp
 	src/configurator.cpp
+	src/utf8_text.cpp
 )
 
 target_link_libraries(

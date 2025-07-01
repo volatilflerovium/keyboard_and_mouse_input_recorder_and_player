@@ -516,14 +516,17 @@ void FileListPopup::OnPopup()
 
 //====================================================================
 
-ResultPopup::ResultPopup(wxWindow* parent, const char* title, const std::string& baseImg)
+ResultPopup::ResultPopup(wxWindow* parent, const char* title, CtrlCommand* cmdPtr)
 :ExtendedPopup(parent, title)
-, m_baseImg(baseImg)
-, m_sampleImg("sample_"+m_baseImg)
+, m_ctrlCmdPtr(cmdPtr)
 , m_bodySizer(nullptr)
 , m_row(nullptr)
+, m_replaceImagePopup(nullptr)
 , m_perc(100)
 {
+	m_baseImg=m_ctrlCmdPtr->getBaseImg();
+	m_sampleImg="sample_"+m_baseImg;
+
 	m_previewPanel=new ImagePanel(this, wxID_ANY, wxDefaultPosition);
 
 	ArrayStringType choicesSreen(2,"");
@@ -546,14 +549,26 @@ ResultPopup::ResultPopup(wxWindow* parent, const char* title, const std::string&
 		m_previewPanel->loadBackground(getImgPath(m_baseImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
 	});
 
+	m_replaceBtn=new wxButton(this, wxID_ANY, wxT("Replace"));
+	m_replaceBtn->Disable();
+	m_replaceBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event){
+		replaceImagePopupDialog();
+	});
+
 	Bind(wxEVT_RADIOBOX, [this](wxCommandEvent& evnt){		
 		if(m_swapScreenshotRadio->GetSelection()==1){
 			m_previewPanel->loadBackground(getImgPath(m_sampleImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
+			m_replaceBtn->Enable();
 		}
 		else{
 			m_previewPanel->loadBackground(getImgPath(m_baseImg).c_str(), wxBITMAP_TYPE_PNG, m_perc);
+			m_replaceBtn->Disable();
 		}
 	});
+
+	m_ctrlRow=new wxBoxSizer(wxHORIZONTAL);
+	m_ctrlRow->Add(m_swapScreenshotRadio, 0, wxRIGHT, FromDIP(10));
+	m_ctrlRow->Add(m_replaceBtn, 0, wxALIGN_BOTTOM);
 
 	setLayout();
 }
@@ -587,7 +602,7 @@ void ResultPopup::setLayout()
 	if(m_row){
 		m_row->Detach(m_previewPanel);
 		m_bodySizer->Detach(m_row);
-		m_bodySizer->Detach(m_swapScreenshotRadio);
+		m_bodySizer->Detach(m_ctrlRow);
 	}
 
 	auto tmpRow=new wxBoxSizer(wxHORIZONTAL);
@@ -595,12 +610,86 @@ void ResultPopup::setLayout()
 
 	auto tmpBodySizer=new wxBoxSizer(wxVERTICAL);
 	tmpBodySizer->Add(tmpRow, 1, wxEXPAND | wxCENTER | wxBOTTOM, FromDIP(10));
-	tmpBodySizer->Add(m_swapScreenshotRadio, 0, wxCENTER);
+	tmpBodySizer->Add(m_ctrlRow, 0, wxCENTER);
 
 	setSizer(tmpBodySizer);
 
 	m_bodySizer=tmpBodySizer;
 	m_row=tmpRow;
+}
+
+//--------------------------------------------------------------------
+
+void ResultPopup::replaceImagePopupDialog()
+{
+	auto replaceImageDialog=wxMessageDialog(
+		this,
+		wxT("Do you want to replace the original image with the new one?"),
+		wxT("Replace Image"),
+		wxYES_NO|wxCENTRE|wxICON_WARNING
+	);
+	/*
+	 * Notice that the image might be used in other tests (that derives from this one)
+	 * Should we replace only on this test or in all the tests?
+	 * */
+	int response=replaceImageDialog.ShowModal();
+	if(wxID_YES!=response){
+		return;
+	}
+
+	if(m_replaceImagePopup){
+		wxDELETE(m_replaceImagePopup);
+	}
+
+	m_replaceImagePopup=new ExtendedPopup(this, "Replace Image");
+	{
+		ArrayStringType choicesSreen(2,"");
+		choicesSreen[Target::ONE]="Only in this test.";
+		choicesSreen[Target::ALL]="In all the tests with this image.";
+
+		auto imageReplaceRadio=m_replaceImagePopup->builder<wxRadioBox>(wxID_ANY, "Target", 
+											wxDefaultPosition, wxDefaultSize, 
+											choicesSreen, 2, wxRA_VERTICAL);
+
+		auto okBtn=m_replaceImagePopup->builder<wxButton>(wxID_ANY, wxT("OK"));
+
+		okBtn->Bind(wxEVT_BUTTON, [this, imageReplaceRadio](wxCommandEvent& event){
+			replaceImage(Target(imageReplaceRadio->GetSelection()));
+			m_replaceImagePopup->Dismiss();
+		});		
+
+		wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
+		col->Add(imageReplaceRadio, 0, wxBOTTOM, FromDIP(10));
+		col->Add(okBtn, 0, wxALIGN_RIGHT);
+
+		m_replaceImagePopup->setSizer(col);
+	}
+
+	m_replaceImagePopup->Popup();
+}
+
+
+//--------------------------------------------------------------------
+
+void ResultPopup::replaceImage(Target target)
+{	
+	std::error_code ec;
+	if(target==Target::ALL){
+		std::filesystem::rename(getImgPath(m_sampleImg), getImgPath(m_baseImg), ec);
+	}
+	else{
+		std::string dstImg=imageId();
+		std::filesystem::rename(getImgPath(m_sampleImg), getImgPath(dstImg), ec);
+		if(ec.value()==0){
+			m_ctrlCmdPtr->updateBaseImg(dstImg.c_str());
+			wxCommandEvent event(wxEVT_CUSTOM_EVENT, EvtID::CHANGES_MADE);
+			wxPostEvent(this, event);
+		}
+		else{
+			wxMessageBox(wxString::Format("Internal error: %d", ec.value()));
+		}
+	}
+	Dismiss();
 }
 
 //====================================================================

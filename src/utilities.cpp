@@ -160,6 +160,27 @@ const char* getTimeStamp(const char* format)
    return timeString;
 }
 
+const char* session(bool regenerate)
+{
+	static std::string session=getTimeStamp("%y%m%d%H%M%S");
+	if(regenerate){
+		session=getTimeStamp("%y%m%d%H%M%S");
+	}
+	return session.c_str();
+}
+
+//====================================================================
+
+std::string imageId()
+{
+	static int imgCount=0;
+	std::string id=session();
+	id.append("_");
+	id.append(std::to_string(imgCount++));
+	id.append(".png");
+	return id;
+}
+
 //====================================================================
 
 bool imageExists(const char* imageName)

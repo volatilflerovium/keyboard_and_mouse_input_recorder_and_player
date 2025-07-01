@@ -31,13 +31,14 @@
 #include <wx/menu.h>
 #include <wx/valnum.h>
 #include <wx/spinctrl.h>
+#include <wx/icon.h>
 
 #include <filesystem>
 
 #define FULL_SCREEN "root"
 #define SCREEN_BACKGROUND "background.png"
 
-#define CMD_LIST_WIDTH 550
+#define CMD_LIST_WIDTH 600
 #define CMD_LIST_HEIGHT 450
 
 extern MouseEmulatorI* s_MouseEmulator;
@@ -84,6 +85,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 		wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxCLOSE_BOX)
 , m_settings(SettingsManager::getSettingManager())
 , m_timer(this, WX::TIMER)
+, m_checkInterfacetimer(this, WX::INTERFACE_TIMER)
 , m_playBitmapBundle(mkBitmapBundle("actions/media-playback-start-symbolic.symbolic.png"))
 , m_pauseBitmapBundle(mkBitmapBundle("actions/media-playback-pause-symbolic.symbolic.png"))
 , m_statusBar(nullptr)
@@ -99,6 +101,10 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 , m_fullMenu(true)
 , m_indentation(false)
 {
+	auto icon=wxIcon();
+	icon.LoadFile(resourcePath("icons/kmRecPlayerIcon.png"));
+	SetIcon(icon);
+	
 	wxBoxSizer* mainContentSizerV = new wxBoxSizer(wxVERTICAL);
 
 	session();
@@ -228,7 +234,7 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 		wxCB_SORT
 	);
 
-	m_fileDropDown->Append(wxT(""));
+	m_fileDropDown->Append(wxT(" Select file"));
 	m_fileDropDown->SetSelection(0);
 
 	int count=0;
@@ -420,32 +426,11 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 	}, EvtID::CMD_COUNT_UPDATED);
 
 	//===============================================
-	//===============================================
-	//------------------ Get Focus ------------------
-
-	//std::cout<<"got to right bottom coner to do the click\n";
-	wxRect rect=wxDisplay(this).GetGeometry();
-	int wx=rect.GetWidth()-2;
-	int hy=rect.GetHeight()-2;
-	m_getFocusCmd=[this, wx, hy](){
-		/*
-		s_MouseEmulator->go2Position(wx, hy);
-
-		s_MouseEmulator->clickLeftBtn();
-
-		s_MouseEmulator->go2Position(m_click.x, m_click.y);
-
-		s_MouseEmulator->clickLeftBtn();// */
-	};
-
-	//===============================================
 	//-----------------------------------------------
 
 	wxBoxSizer* bx=new wxBoxSizer(wxHORIZONTAL);
 	bx->Add(mainContentSizerV, 1, wxEXPAND | wxALL, FromDIP(10));
 	this->SetSizerAndFit(bx);
-
-	//SetCurrentWindow(FULL_SCREEN);
 
 	//===============================================
 
@@ -453,9 +438,9 @@ RecorderPlayerKM::RecorderPlayerKM(const wxString& title)
 
 	Centre();
 
-	checkConnection();
+	autoInstall();
 
-	//m_configurationTimer.StartOnce(50);
+	m_checkInterfacetimer.StartOnce(100);
 }
 
 //--------------------------------------------------------------------
@@ -493,6 +478,7 @@ BEGIN_EVENT_TABLE(RecorderPlayerKM, wxFrame)
 
 	EVT_BUTTON(WX::SAVE_TO_FILE, RecorderPlayerKM::OnSave)
 	EVT_TIMER(WX::TIMER, RecorderPlayerKM::OnRunCmdTimer)
+	EVT_TIMER(WX::INTERFACE_TIMER, RecorderPlayerKM::checkConnection)
 
 	EVT_MENU(WX::MENU::WINDOW_INPUT, RecorderPlayerKM::OnMenuClick)
 	EVT_MENU(WX::MENU::OPEN_LOOP, RecorderPlayerKM::OnLoopBtn)
@@ -621,7 +607,7 @@ void RecorderPlayerKM::OnWorker(wxCommandEvent& event)
 
 //--------------------------------------------------------------------
 
-void RecorderPlayerKM::checkConnection()
+void RecorderPlayerKM::checkConnection(wxTimerEvent& event)
 {
 	if(m_playBtn->IsEnabled()){
 		m_playBtn->Disable();
@@ -725,18 +711,6 @@ void RecorderPlayerKM::OnSelection(wxCommandEvent& event)
 	}
 	
 	m_inputBlocker->clearSelection();
-}
-
-//--------------------------------------------------------------------
-
-std::string RecorderPlayerKM::imageId()
-{
-	static int imgCount=0;
-	std::string id=session();
-	id.append("_");
-	id.append(std::to_string(imgCount++));
-	id.append(".png");
-	return id;
 }
 
 //--------------------------------------------------------------------
@@ -978,7 +952,7 @@ void RecorderPlayerKM::ManagePanels(PanelStates state)
 			Iconize();
 		}
 	}
-	
+
 	Refresh();
 	Update();
 }
@@ -1071,7 +1045,6 @@ void RecorderPlayerKM::SetCurrentWindow(const char* windowName)
 	else{
 		m_currentWindoRect=wxDisplay().GetGeometry();
 	}
-
 	m_topLeftCorner.x=m_currentWindoRect.x;
 	m_topLeftCorner.y=m_currentWindoRect.y;
 
@@ -1165,10 +1138,6 @@ void RecorderPlayerKM::SequenceFinished()
 		}
 
 		ManagePanels(PanelStates::Recording);
-		
-		if(m_commandInputMode!=CommandInputMode::ACTIVE){
-			m_getFocusCmd();
-		}
 	}
 }
 
@@ -1586,7 +1555,7 @@ void RecorderPlayerKM::loadFile()
 	}
 	else{
 		clearCommands();
-		wxMsgBox("Failed to load the file: %s", selectedFile);
+		wxMsgBox("Failed to load file: %s", selectedFile);
 	}
 }
 
@@ -1628,7 +1597,7 @@ void RecorderPlayerKM::initPopups()
 								wxT("Name: "));
 
 		m_fileNameInput=m_saveToFilePopup->builder<wxTextCtrl>(wxID_ANY, wxT(""),
-							wxDefaultPosition, FromDIP(wxSize(200, 30)),
+							wxDefaultPosition, FromDIP(wxSize(420, 30)),
 							wxTE_LEFT, s_fileValidator, wxTextCtrlNameStr);
 
 		auto cancelFileBtn=m_saveToFilePopup->builder<wxButton>(WX::CANCEL_SAVE_FILE, wxT("Cancel"));
@@ -1653,7 +1622,6 @@ void RecorderPlayerKM::initPopups()
 	//------------------------------------------------
 	//----------------- Settings ---------------------
 
-
 	m_settingsPopup=new PopupWrapper();
 
 	m_settingsPopup->setPopupBuilder([this](){
@@ -1664,21 +1632,20 @@ void RecorderPlayerKM::initPopups()
 
 		auto defaultDelay=settingsPopup->builder<WX_TextCtrl>(wxID_ANY, wxT("1000"), wxDefaultPosition,
 								FromDIP(wxSize(90, 30)), wxTE_PROCESS_ENTER, s_integerValidator);
-
 		// diference between SetValue and ChangeValue, is that ChangeValue does NOT
 		// generate text change event.
 		defaultDelay->ChangeValue(wxString::Format(wxT("%i"), m_settings.getTimeDelay()));
 		
 		defaultDelay->setCallback([this](const char* val){
 			m_settings.setTimeDelay(std::atoi(val));
-		});// */
+		});
 
 		defaultDelay->Bind(wxEVT_TEXT_ENTER, [this, defaultDelay](wxCommandEvent& event) {
 			m_settings.setTimeDelay(std::atoi(defaultDelay->GetValue()));
 		});
 
 		auto defaultTimeout=settingsPopup->builder<wxStaticText>(wxID_ANY,
-									wxT("Default mouse input\ntime padding: "));
+									wxT("Default time padding (ms): "));
 
 		auto timePaddingSetting=settingsPopup->builder<WX_TextCtrl>(wxID_ANY, wxT("600"), wxDefaultPosition,
 						FromDIP(wxSize(-1, 30)), 0, s_integerValidator);
@@ -1742,6 +1709,21 @@ void RecorderPlayerKM::initPopups()
 			}
 		});
 
+		auto checkBox=settingsPopup->builder<wxCheckBox>(wxID_ANY, wxT("Install"),
+						wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+
+		if(m_settings.appIsInstalled()){
+			checkBox->SetValue(true);
+			checkBox->Disable();
+		}
+		else{
+			checkBox->Bind(wxEVT_CHECKBOX, [this, checkBox](wxCommandEvent& event){
+				checkBox->Disable();
+				m_settingsPopup->Dismiss();
+				autoInstall(true);
+			});
+		}
+
 		auto interfacePopupBtn=settingsPopup->builder<wxButton>(wxID_ANY, wxT("Set Interface"));
 
 		interfacePopupBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event){
@@ -1786,9 +1768,13 @@ void RecorderPlayerKM::initPopups()
 			row5->Add(selectionBrushColour, 1);
 
 			wxBoxSizer* row6=new wxBoxSizer(wxHORIZONTAL);
-			row6->Add(interfacePopupBtn, 0);
-			row6->Add(1, 1, wxEXPAND);
-			row6->Add(symbolsPopupBtn, 0);
+			row6->Add(checkBox, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(10));
+
+
+			wxBoxSizer* row7=new wxBoxSizer(wxHORIZONTAL);
+			row7->Add(interfacePopupBtn, 0);
+			row7->Add(1, 1, wxEXPAND);
+			row7->Add(symbolsPopupBtn, 0);
 
 			wxBoxSizer* col = new wxBoxSizer(wxVERTICAL);
 			col->Add(row, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
@@ -1797,7 +1783,8 @@ void RecorderPlayerKM::initPopups()
 			col->Add(row3, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 			col->Add(row4, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
 			col->Add(row5, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
-			col->Add(row6, 0, wxEXPAND);
+			col->Add(row6, 0, wxBOTTOM | wxEXPAND, FromDIP(10));
+			col->Add(row7, 0, wxEXPAND);
 
 			settingsPopup->setSizer(col);
 		}
@@ -1925,7 +1912,8 @@ void RecorderPlayerKM::initPopups()
 
 			if(ok){
 				m_interfacePopup->Dismiss();
-				checkConnection();
+				m_checkInterfacetimer.StartOnce(10);
+				//checkConnection();
 			}
 		});
 
@@ -2141,15 +2129,13 @@ void RecorderPlayerKM::initPopups()
 
 				std::u8string unicodeStr=wxString2u8String(unicodeInput->GetValue().Lower());
 
-				unicodeInput->SetValue("");
+				UTF8Char utf8Symbol=UTF8Char::hex2UTF8Char(unicodeInput->GetValue().mb_str());
 
-				s_KeyboardEmulator->unicodeCharacter(unicodeStr.data());
-
-				//std::u8string symbol=wxString2u8String(unicodeInput->GetValue());
-				//dbg(reinterpret_cast<const char*>(symbol.data()), "<<--");
+				unicodeInput->SetValue(wxString::FromUTF8(utf8Symbol.asConstChar()));
+				unicodeInput->SetInsertionPointEnd();
 
 				std::u8string description=u8"Unicode: ";
-				description.append(unicodeStr.data());
+				description.append(utf8Symbol.asConst8Char());
 
 				addCommand(
 					UnicodeCommand::Builder(
@@ -2419,8 +2405,9 @@ void RecorderPlayerKM::makeShortcut(wxKeyEvent& event)
 	m_shortcutInput->SetValue(str);
 	m_shortcutInput->SetInsertionPointEnd();
 }
-//--------------------------------------------------------------------
 
+//--------------------------------------------------------------------
+/*
 const char* RecorderPlayerKM::session(bool regenerate)
 {
 	static std::string session=getTimeStamp("%y%m%d%H%M%S");
@@ -2428,6 +2415,76 @@ const char* RecorderPlayerKM::session(bool regenerate)
 		session=getTimeStamp("%y%m%d%H%M%S");
 	}
 	return session.c_str();
+}// */
+
+//--------------------------------------------------------------------
+
+void RecorderPlayerKM::autoInstall(bool install)
+{
+#ifndef DEBUG
+	const wxString desktopEntryFile=wxString::Format("%s/.local/share/applications/kmRecorderPlayer.desktop", getenv("HOME")); 
+	const wxString appInstallationDir=wxString::Format("%s/bin/kmRecPlayer", getenv("HOME")); 
+#else
+	const wxString desktopEntryFile="/tmp/kmRecorderPlayer.desktop";
+	const wxString appInstallationDir="/tmp/bin/kmRecPlayer";
+#endif
+
+	#ifndef DEBUG
+
+	if(!install && !m_settings.canAutoInstallApp() ){
+		return;
+	}
+	
+	auto saveDataDialog=wxMessageDialog(
+		this,
+		wxT("Do you want to create a desktop file entry?"),
+		wxT("Install"),
+		wxYES_NO|wxCENTRE|wxICON_WARNING
+	);
+
+	int response=saveDataDialog.ShowModal();
+	if(wxID_YES==response){
+		std::string appImagePath=getenv("APPIMAGE");
+		std::string appimageName=appImagePath.substr(appImagePath.find_last_of("/")+1);
+
+		std::error_code ec;
+		if(!std::filesystem::exists(std::string(appInstallationDir), ec)){
+			std::filesystem::create_directories(std::string(appInstallationDir), ec);
+		}
+		
+		const char* command="[Desktop Entry]\n\
+Name=kmRecorderAndPlayer\n\
+Comment=Graphical tool for recording and playing keyboard and mouse input\n\
+Terminal=false\n\
+Type=Application\n\
+Exec=%s/%s\n\
+Icon=%s/kmRecPlayerIcon.png\n\
+Categories=Development;";
+
+		wxString fileContent=wxString::Format(command, appInstallationDir, appimageName, appInstallationDir);
+
+		std::fstream fileStream(desktopEntryFile.mb_str(), std::ios::out | std::ios::trunc);
+		if(fileStream.is_open()){
+			fileStream<<fileContent;
+			fileStream.close();
+		}
+
+		std::string srcFilePath=std::string(wxString::Format("%s/%s", getenv("OWD"), appimageName).mb_str());
+		std::string dstFilePath=std::string(wxString::Format("%s/%s", appInstallationDir, appimageName).mb_str());
+
+		std::filesystem::rename(srcFilePath, dstFilePath, ec);
+		
+		srcFilePath=std::string(wxString::Format("%s/kmRecPlayerIcon.png", getenv("APPDIR")).mb_str());
+		dstFilePath=std::string(wxString::Format("%s/kmRecPlayerIcon.png", appInstallationDir).mb_str());
+
+		if(!std::filesystem::copy_file(srcFilePath, dstFilePath, std::filesystem::copy_options::overwrite_existing, ec)){
+			//std::cout<<"Error: "<<ec.value()<<"\n";
+		}
+	}
+	
+	m_settings.setInstallationStatus(wxID_YES==response);
+	
+	#endif
 }
 
 //====================================================================

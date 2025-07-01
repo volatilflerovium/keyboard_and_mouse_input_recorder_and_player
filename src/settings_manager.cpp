@@ -38,7 +38,7 @@ bool SettingsManager::loadSettings()
 					continue;
 				}
 
-				SimpleUnserialization<20> cmdData(infoLine.c_str(), SEPARATOR);
+				SimpleUnserialization<22> cmdData(infoLine.c_str(), SEPARATOR);
 				try{
 					m_timeDelay=cmdData.get<int>("timeDelay"); 
 					m_timePadding=cmdData.get<int>("timePadding"); 
@@ -51,6 +51,7 @@ bool SettingsManager::loadSettings()
 					m_ip=cmdData.get<const char*>("ip"); 
 					m_port=cmdData.get<int>("port"); 
 					m_doubleClick=cmdData.get<int>("doubleClick");
+					m_installedApp=InstallationStatus(cmdData.get<int>("installedApp", int(InstallationStatus::INITIAL)));
 					break;
 				}
 				catch(...)
@@ -101,6 +102,30 @@ void SettingsManager::setInterfaceSetting(int interface, const wxString& alpha, 
 
 		HIDManager::SetHidEmulator(m_interface, this->alpha().mb_str(), numeric(), isSerial());
 	}
+}
+
+//--------------------------------------------------------------------
+
+bool SettingsManager::appIsInstalled() const
+{
+#ifndef DEBUG
+	std::string appImagePath=getenv("APPIMAGE");
+	std::string appimageName=appImagePath.substr(appImagePath.find_last_of("/")+1);
+
+	const wxString desktopEntryFile=wxString::Format("%s/.local/share/applications/kmRecorderPlayer.desktop", getenv("HOME")); 
+	const wxString app=wxString::Format("%s/bin/kmRecPlayer/%s", getenv("HOME"), appimageName); 
+#else
+	const wxString desktopEntryFile="/tmp/kmRecorderPlayer.desktop";
+	const wxString app="/tmp/bin/kmRecPlayer/kmRecorderAndPlayer-x86_64.AppImage";
+#endif
+	
+	std::error_code ec;
+	bool installed=std::filesystem::exists(std::string(desktopEntryFile.mb_str()), ec);
+	if(installed){
+		installed=std::filesystem::exists(std::string(app.mb_str()), ec);
+	}
+	
+	return installed;
 }
 
 //====================================================================

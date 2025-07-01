@@ -20,6 +20,7 @@
 
 #include "debug_utils.h"
 #include <cstring>
+#include <optional>
 
 #define SEPARATOR "#+{35sdfh4}|{7gkjf29}+#"
 
@@ -306,19 +307,41 @@ class SimpleUnserialization
 		template<typename T>
 		T get(const char* key)
 		{
+			std::optional<T> value=getValue<T>(key);
+			if(value){
+				return *value;
+			}
+			
+			std::string excp="Key: ";
+			excp+=key;
+			excp+=" not foundy.";
+			throw excp.c_str();
+		}
+
+		template<typename T>
+		T get(const char* key, T&& defaultValue)
+		{
+			std::optional<T> value=getValue<T>(key);
+			if(value){
+				return *value;
+			}
+			return std::forward<T>(defaultValue);
+		}
+
+	private:
+		CstrSplit<2*N> m_cstrSplit;
+
+		template<typename T>
+		std::optional<T> getValue(const char* key)
+		{
 			size_t keySize=std::strlen(key);
 			for(size_t i=0; i<m_cstrSplit.dataSize(); i+=2){
 				if(std::memcmp(m_cstrSplit[i], key, keySize*sizeof(char))==0){
 					return FromString<T>::getFrom(m_cstrSplit[i+1], m_cstrSplit.chunkSize(i+1));
 				}
 			}
-			std::string excp="Not conversion rule for type of key: ";
-			excp+=key;
-			throw excp.c_str();
+			return std::nullopt;
 		}
-
-	private:
-		CstrSplit<2*N> m_cstrSplit;
 };
 
 //====================================================================

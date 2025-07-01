@@ -124,6 +124,7 @@ class RecorderPlayerKM : public wxFrame
 
 	private:
 		wxTimer m_timer;
+		wxTimer m_checkInterfacetimer;
 
 		std::string m_baseImage;
 		wxString m_roiStr;
@@ -202,7 +203,6 @@ class RecorderPlayerKM : public wxFrame
 		WxWorker* m_connectionWorkerPtr; 
 
 		CmdScrolledWindow::PlayMode m_mode;
-		Cmd m_getFocusCmd;
 
 		CommandInputMode m_commandInputMode;
 		State m_state;
@@ -217,8 +217,10 @@ class RecorderPlayerKM : public wxFrame
 		bool m_fullMenu;
 		bool m_indentation;
 
+		void autoInstall(bool install=false);
+
 		void dialogConfirm(const wxString& line1, const wxString& line2);
-		void checkConnection();
+		void checkConnection(wxTimerEvent& event);
 		void UpdateConnection(bool isConnected);
 		void initPopups();
 		bool Pause();
@@ -232,8 +234,8 @@ class RecorderPlayerKM : public wxFrame
 		bool SaveChangesData();
 		void clearCommands();
 
-		const char* session(bool regenerate=false);
-		std::string imageId();
+		//const char* session(bool regenerate=false);
+		//std::string imageId();
 
 		void windowLevelInput(const char* windowName);
 		void takeScreenshotByWindow(const char* windowName);

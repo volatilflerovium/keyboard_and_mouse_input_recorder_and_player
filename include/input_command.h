@@ -83,17 +83,17 @@ class ExitCode
 	public:
 		enum 
 		{
-			OK=0,
-			FAILED=1<<1,
-			TIMEOUT=1<<2,
-			BASE_IMAGE_MISSING=1<<3,
-			TARGET_WINDOW_CLOSED=1<<4,
-			CV_EXCEPTION=1<<5,
-			OUT_OF_BOUND=1<<6,// when mouse pointer is trying to get to a position outside of the screen
-			SYSTEM_FAILED=1<<7,
-			UNKNOWN=1<<8,
-			MISSING_SYMBOL=1<<9,
-			LAST=1<<10
+			OK                  =0,
+			FAILED              =1<<0,
+			TIMEOUT             =1<<1,
+			BASE_IMAGE_MISSING  =1<<2,
+			TARGET_WINDOW_CLOSED=1<<3,
+			CV_EXCEPTION        =1<<4,
+			OUT_OF_BOUND        =1<<5,// when mouse pointer is trying to get to a position outside of the screen
+			SYSTEM_FAILED       =1<<6,
+			MISSING_SYMBOL      =1<<7,
+			UNKNOWN             =1<<8,
+			LAST                =1<<9
 		};
 
 		static const char* getExitCodeMsg(int exitCode)
@@ -625,7 +625,7 @@ class CtrlCommand : public BaseCommand, public WindowOffset
 
 		virtual int getExitCode() const override
 		{
-			return m_statusCode | 1 * static_cast<int>(m_strictRun && m_statusCode>0);
+			return m_statusCode | static_cast<int>(m_strictRun && m_statusCode!=ExitCode::OK);
 		}
 
 		virtual uint wait() const override
@@ -673,7 +673,17 @@ class CtrlCommand : public BaseCommand, public WindowOffset
 
 		virtual void setCtrlCallback();
 
-		virtual void updateBaseImg(const char* baseImg, const char* roiStr);
+		/*
+		 * Replace the current image with the newBaseImg, and a new ROI newRoiStr
+		 * 
+		 * */
+		virtual void updateBaseImg(const char* newBaseImg, const char* newRoiStr);
+
+		/*
+		 * Replace only the base image, it assumes that the new image is taken
+		 * using the same ROI as the current one.
+		 * */
+		virtual void updateBaseImg(const char* baseImg);
 
 		virtual void setSensitivity(uint sensitivity)
 		{

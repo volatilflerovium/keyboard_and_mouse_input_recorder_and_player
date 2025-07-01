@@ -210,6 +210,23 @@ class SettingsManager final
 			m_doubleClick=doubleClick;
 		}
 
+		void setInstallationStatus(bool status)
+		{
+			if(status){
+				m_installedApp=InstallationStatus::INSTALLED;
+			}
+			else{
+				m_installedApp=InstallationStatus::NOT_INSTALLED;
+			}
+		}
+
+		bool canAutoInstallApp() const
+		{
+			return m_installedApp==InstallationStatus::INITIAL;
+		}
+
+		bool appIsInstalled() const;
+
 	private:
 		wxString m_brushColour{"#0000FF"};
 		wxString m_serialPort{""};
@@ -222,6 +239,7 @@ class SettingsManager final
 		uint m_baudRate{0};
 		uint m_port{0};
 		uint m_doubleClick{100};
+		InstallationStatus m_installedApp{InstallationStatus::INITIAL};
 
 		SettingsManager()=default;
 };
@@ -243,7 +261,8 @@ inline void SettingsManager::saveToFile(std::ostream& outputStream)
 		"baudRate", m_baudRate,
 		"ip", std::string(m_ip.mb_str()),
 		"port", m_port,
-		"doubleClick", m_doubleClick 
+		"doubleClick", m_doubleClick,
+		"installedApp", uint(m_installedApp)
 	);
 	json.dump(outputStream);
 }

@@ -5,5 +5,5 @@ install(
 
 install(
     FILES kmRecPlayerIcon.png
-    DESTINATION share/icons/hicolor/228x228/apps
+    DESTINATION share/icons/hicolor/256x256/apps
 )

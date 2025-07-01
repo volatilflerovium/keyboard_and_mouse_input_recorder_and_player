@@ -125,8 +125,6 @@ bool existPath(const char* fileName);
 
 //====================================================================
 
-const char* getTimeStamp(const char* format="%Y-%m-%dT%H:%M:%SZ");
-
 bool imageExists(const char* imageName);
 
 inline bool imageExists(const std::string& imageName)
@@ -149,7 +147,7 @@ void removeOrphanImgs(wxChoice* fileDropDown);
 template<int B, typename Func>
 bool exeCommand(const char* cmd, Func cbk)
 {
-	std::string str(" ", B);
+	std::string str(B, ' ');
 	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
 	if (!pipe) {
 		return false;
@@ -222,6 +220,15 @@ inline bool wxTakeScreenshot(const int ms, const std::string& windowName, const 
 {
 	return wxTakeScreenshot(ms, windowName.c_str(), outputImage.c_str(), manual);
 }
+
+//====================================================================
+
+const char* getTimeStamp(const char* format="%Y-%m-%dT%H:%M:%SZ");
+
+//--------------------------------------------------------------------
+
+const char* session(bool regenerate=false);
+std::string imageId();
 
 //====================================================================
 

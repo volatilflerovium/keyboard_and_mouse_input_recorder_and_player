@@ -440,13 +440,13 @@ void ControlCommandWrapper::mkContextMenu()
 
 void ControlCommandWrapper::OnCheckStatus(wxCommandEvent& event)
 {
-	if(ExitCode::FAILED<(m_cmdPtr->getExitCode()&~1)){
+	if(ExitCode::FAILED<(m_cmdPtr->getExitCode())){
 		wxString msg=wxString::Format(wxT("Error: %s."), ExitCode::getExitCodeMsg(m_cmdPtr->getExitCode()));
 		wxMessageBox(msg);
 	}
 	else{
 		if(!m_imgCtrlViewrPtr){
-			m_imgCtrlViewrPtr=new ResultPopup(this, "Image for Ctrl Command", m_cmdPtr->getBaseImg());
+			m_imgCtrlViewrPtr=new ResultPopup(this, "Image for Ctrl Command", m_cmdPtr);
 		}
 		else{
 			m_imgCtrlViewrPtr->loadBaseImg(m_cmdPtr->getBaseImg());

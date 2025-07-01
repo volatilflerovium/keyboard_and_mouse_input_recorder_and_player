@@ -50,17 +50,18 @@ void MouseCmdExitPosition::setExitPosition()
 
 //====================================================================
 
-const char* const ExitCode::ExitCodeVerbose[ExitCode::TOTAL_MSG]={
+const char* const ExitCode::ExitCodeVerbose[]=
+{
 	"OK",                          //=0,
-	"Failed",                      //FAILED=1<<1,
-	"Timeout",                     //TIMEOUT=1<<2,
-	"Control image missing",       //"BASE_IMAGE_MISSING=1<<3,
-	"Target window is closed",     //TARGET_WINDOW_CLOSED=1<<4,
-	"Image corruption",            //CV_EXCEPTION=1<<5,
-	"The input position for the command\nwas out of the visible screen",//OUT_OF_BOUND=1<<6,// when pointer is trying to get to a position outside of the screen
-	"System error",                 //SYSTEM_FAILED=1<<7,
-	"Unknown",
-	"Missing symbol"
+	"Failed",                      //FAILED
+	"Timeout",                     //TIMEOUT,
+	"Control image missing",       //BASE_IMAGE_MISSING,
+	"Target window is closed",     //TARGET_WINDOW_CLOSED,
+	"Dimensions of control image and sample image\ndo not match. Possible cause: window resized or image corruption",            //CV_EXCEPTION
+	"The input position for the command\nwas out of the visible screen",//OUT_OF_BOUND, when pointer is trying to get to a position outside of the screen
+	"System error",                 //SYSTEM_FAILED,
+	"Missing symbol",
+	"Unknown"
 };
 
 //====================================================================
@@ -85,15 +86,18 @@ void MouseLeftClick(int x, int y)
 
 int ExitCode::ln(int x)
 {
-	int n=0;
-	while(x>1){
-		x=x>>1;
-		n++;
-	}
-	if(n<ExitCode::LAST){
+	if(x<ExitCode::LAST){
+		int n=0;
+		while(x>1){
+			x=x>>1;
+			n++;
+		}
+		if(n>0){
+			n++;
+		}
 		return n;
 	}
-	return ExitCode::UNKNOWN;
+	return ln(ExitCode::UNKNOWN);
 }
 
 //====================================================================
@@ -610,7 +614,6 @@ void CtrlCommand::setCtrlCallback()
 	bool baseImageExists=imageExists(m_baseImageName);
 
 	m_cbk=[this, screenshotCmd, smpImgPath, baseImageExists](){
-		
 		if(baseImageExists){
 			m_statusCode=ExitCode::TARGET_WINDOW_CLOSED;
 			if(windowExists()){
@@ -632,11 +635,20 @@ void CtrlCommand::setCtrlCallback()
 
 //--------------------------------------------------------------------
 
-void CtrlCommand::updateBaseImg(const char* baseImg, const char* roiStr)
+void CtrlCommand::updateBaseImg(const char* newBaseImg, const char* newRoiStr)
 {
 	//removeImg(); do not remove the image because we do not know if it is used by another test
-	m_baseImageName=baseImg;
-	m_roiStr=roiStr;
+	m_baseImageName=newBaseImg;
+	m_roiStr=newRoiStr;
+	setCtrlCallback();	
+}
+
+//--------------------------------------------------------------------
+
+void CtrlCommand::updateBaseImg(const char* newBaseImg)
+{
+	//removeImg(); do not remove the image because we do not know if it is used by another test
+	m_baseImageName=newBaseImg;
 	setCtrlCallback();	
 }
 
@@ -654,9 +666,6 @@ bool CtrlCommand::ready()
 	}
 	
 	if(m_tries<++m_triesCount){
-		if(!result && m_statusCode<2){
-			m_statusCode=ExitCode::TIMEOUT;
-		}
 		result=true;// we should return true even if it timeout, because true will break the loop
 	}
 

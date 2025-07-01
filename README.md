@@ -10,13 +10,14 @@ user input.
 - [Dependencies](#dependencies)
 - [Features](#features)
 - [AppImage](#appimage)
+	- [Desktop Integration](#desktop-integration) 
 - [Examples](#examples)
 - [Interface Method](#interface-method)
 	- [TinyUSB](#TinyUSB)
 	- [uinput](#uinput)
 	- [vm](#vm)
 - [Control Command](#control-command)
-- [Things to be Considered](things-to-be-considered)
+- [Things to be Considered](#things-to-be-considered)
 - [License](#license)
 
 ## Overview
@@ -86,6 +87,32 @@ openSUSE, Red Hat, Ubuntu, and other common desktop distributions running with x
 
 Some functionalities of kmRecorderAndPlayer relay on x11 (input on specific window,
 window screenshot), therefore it is not working under Wayland.
+
+### Desktop Integration
+
+This is totally optional.
+
+Creating desktop entries for kmRecorderPlayer ensures quick access
+from the Application menu. For this, kmRecorderAndPlayer's autoinstallation
+will create desktop file with the following content
+
+```
+[Desktop Entry]
+Name=HID Recorder and Player
+Comment=Graphical tool for recording and playing keyboard and mouse input
+Terminal=false
+Type=Application
+Exec=~/bin/kmRecPlayer/kmRecorderAndPlayer-x86_64.AppImage
+Icon=~/bin/kmRecPlayer/kmRecPlayerIcon.png
+Categories=Development;
+```
+
+and save it in ~/.local/share/applications/ It also will create the directory
+~/bin/kmRecPlayert and move the appimage there. After this you will be able
+to see kmRecorderAndPlayer listed in the Application menu under Development.
+
+To uninstall it, delete the directory ~/bin/kmRecPlayer and the file
+~/.local/share/applications/kmRecorderPlayer.desktop
 
 ## Examples
 

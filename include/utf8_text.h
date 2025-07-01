@@ -84,31 +84,15 @@ class UTF8Char
 			return *this;
 		}
 
-		static unsigned char utf8CodeUnit(const char8_t ch8)
-		{
-			if(ch8 < 0b1000'0000) { // 7-bit code unit
-				return 1;
-			}
+		static unsigned char utf8CodeUnit(const char8_t ch8);
 
-			if(ch8< 0b1100'0000) { // continuation byte in this context is invalid
-				return 0;
-			}
-
-			if(ch8 < 0b1110'0000) {
-				return 2;
-			}
-
-			if(ch8 < 0b1111'0000) {
-				return 3;
-			}
-
-			if(ch8 < 0b1111'1000) {
-				return 4;
-			}
-
-			// else out of range for code unit
-			return 0;
-		}
+		/*
+		 * Take a hex string and return the respective utf8 char
+		 *
+		 * For example "0001F607" (\U0001F607) return the UTF8Char for 😇
+		 * 
+		 * */
+		static UTF8Char hex2UTF8Char(const char* hexSymbol);
 
 		bool isValid() const
 		{
@@ -149,7 +133,7 @@ class UTF8Char
 		}
 
 	private:
-		char8_t m_utf8[5]={};
+		char8_t m_utf8[5]={'\0', '\0', '\0','\0', '\0'};
 		unsigned char m_size{0}; // how many char8_t the utf8 symbol is made of
 };
 
@@ -196,20 +180,7 @@ class UTF8_Text
 			}
 		}
 
-		void find(const char8_t* str, std::function<void(int)> cbk=nullptr)
-		{
-			unsigned char l=UTF8Char(str).size();
-			for(auto& [a,b] : m_chars){
-				if(b==l){
-					if(std::memcmp(str, &m_text.c_str()[a], b)==0){
-						if(cbk){
-							cbk(a);
-						}
-						//dbg("found: ", reinterpret_cast<const char*>(str), " at: ", a, " : ", b);
-					}
-				}
-			}
-		}
+		void find(const char8_t* str, std::function<void(int)> cbk=nullptr);
 
 		size_t totalWords() const
 		{
@@ -230,31 +201,9 @@ class UTF8_Text
 			}
 		}
 
-		void debug()
-		{
-			dbg("length: ", m_strLen);
-			for(auto& [a,b] : m_chars){
-				dbg("symbol position: ", a, " bytes ", b);
-			}
+		std::u8string substr(uint start, uint length) const;
 
-			for(auto& [p, l] : m_words){
-				dbg("word at: ", p, " length: ", l);
-			}
-		}
-
-		std::u8string substr(uint start, uint length) const
-		{
-			if(m_chars.size()<start){
-				return u8"";
-			}
-			uint s=0;
-			for(size_t i=start; i<start+length; i++){
-				s+=m_chars[i].second;
-			}
-			std::u8string result(s, '\0');
-			std::memcpy(result.data(), m_text.data()+m_chars[start].first, s*sizeof(char8_t));
-			return result;
-		}
+		void debug();
 
 		std::u8string substr(uint start) const
 		{
@@ -278,45 +227,8 @@ class UTF8_Text
 		std::vector<std::pair<int, int>> m_words;
 		size_t m_strLen;
 
-		void init(const char8_t* str)
-		{
-			int wp=0;
-			int wl=0;
-			unsigned char b=0;
-			size_t left=0;
-			int p=0;
-			while(*(str+p)){
-				b=UTF8Char::utf8CodeUnit(*(str+p));
-				if(b==0){
-					m_strLen= -1;
-					break;
-				}
+		void init(const char8_t* str);
 
-				if(std::memcmp(" ", str+p, 1)!=0){
-					if(0==wl){
-						wp=p;
-					}
-					wl+=b;
-				}
-				else{
-					if(wl>0){
-						m_words.emplace_back(wp, wl);
-					}
-					wl=0;
-					
-				}
-				m_chars.emplace_back(left, b);
-
-				++m_strLen;
-				p+=b;
-
-				left+=b;
-			}
-
-			if(m_strLen>1 && wl>0){
-				m_words.emplace_back(wp, wl);
-			}
-		}
 };
 
 //====================================================================

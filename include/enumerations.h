@@ -37,6 +37,7 @@ namespace WX
 		SUBMIT_INPUT,
 		SET_CHOICE,
 		TIMER,
+		INTERFACE_TIMER,
 		CONFIG_TIMER,
 		ROI_RADIO,
 		DISPLAY_KBOARD,
@@ -157,6 +158,15 @@ enum class HID_TARGET
 	NONE,
 	UINPUT,
 	TINYUSB,
+};
+
+
+enum class InstallationStatus
+{
+	INITIAL,
+	NOT_INSTALLED,
+	INSTALLED,
+	
 };
 
 //====================================================================

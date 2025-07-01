@@ -14,9 +14,10 @@
 * Author:  Dan Machado                                               *
 **********************************************************************/
 #include "inputblocker.h"
+#include "utilities.h"
 
 #include <wx/display.h>
-
+#include <wx/icon.h>
 //====================================================================
 
 InputBloker::InputBloker(wxWindow* parent, int transparency)
@@ -24,6 +25,10 @@ InputBloker::InputBloker(wxWindow* parent, int transparency)
 , m_transparency(transparency)
 , m_isIconized(true)
 {
+	auto icon=wxIcon();
+	icon.LoadFile(resourcePath("icons/kmRecPlayerIcon.png"));
+	SetIcon(icon);
+
 	m_roi=nullptr;
 
 	Create(parent, wxID_ANY, "Input Blocker",
