@@ -2,9 +2,13 @@
 deploy_app.sh
 debug_dir
 AppDir/*
-bin
+bin/*
+*/bin/*
+parser_test/bin
 tinyusb_link_lib/lib/lib_tinyusb_link.a
 build/*
+*/build/*
+parser_test/build
 DeployApp
 hid_keyboard_and_mouse/build/*
 ImageDiff_Lib/build

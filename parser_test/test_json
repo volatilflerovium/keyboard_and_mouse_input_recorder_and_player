@@ -1,0 +1,89 @@
+{"ID":5,"description":"Mouse left button click","pressFor":0,"run":true,"wait":600,"windowName":"root","x":51,"y":15}
+{"ID":5,"description":"Mouse left button click","pressFor":0,"run":true,"wait":600,"windowName":"root","x":58,"y":84}
+{"ID":5,"description":"Mouse left button click","pressFor":0,"run":true,"wait":600,"windowName":"root","x":1059,"y":111}
+{"ID":3,"description":"echo \"1 1 0\" > ....","run":true,"text":"echo \"1 1 0\" > .dogic12_session","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":3,"description":"echo \"1 -1 0\" >>...","run":true,"text":"echo \"1 -1 0\" >> .dogic12_session","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":3,"description":"echo \"1 1 0\" > ....","run":true,"text":"echo \"1 1 0\" > .dogic_session","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":3,"description":"echo \"1 -1 0\" >>...","run":true,"text":"echo \"1 -1 0\" >> .dogic_session","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":3,"description":"echo \"1 1 0\" > ....","run":true,"text":"echo \"1 1 0\" > .rubik_session","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":3,"description":"echo \"1 -1 0\" >>...","run":true,"text":"echo \"1 -1 0\" >> .rubik_session","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":3,"description":"/home/dan/Progra...","run":true,"text":"/home/dan/Programming/CPP/Puzzle/bin/puzzle-app","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}
+{"ID":0,"baseImageName":"250425163425_0.png","description":"Watch ROI","roiStr":"","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":240,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":603,"y":18}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"root","x":557,"y":978}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":400,"y":485}
+{"ID":0,"baseImageName":"250425093042_0.png","description":"Watch ROI","roiStr":"500x459+236+206","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":5,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":550,"endY":391,"run":true,"startX":383,"startY":373,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425093042_1.png","description":"Watch ROI","roiStr":"477x484+253+197","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":540,"endY":399,"run":true,"startX":537,"startY":565,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425093042_2.png","description":"Watch ROI","roiStr":"476x438+261+218","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":369,"endY":462,"run":true,"startX":539,"startY":483,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425093042_3.png","description":"Watch ROI","roiStr":"501x431+257+221","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":478,"endY":338,"run":true,"startX":528,"startY":294,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":642,"endY":488,"run":true,"startX":595,"startY":545,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":642,"endY":339,"run":true,"startX":637,"startY":497,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":539,"endY":481,"run":true,"startX":385,"startY":460,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":574,"endY":319,"run":true,"startX":423,"startY":301,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":601,"endY":324,"run":true,"startX":424,"startY":305,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":384,"endY":371,"run":true,"startX":389,"startY":546,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425093042_4.png","description":"Watch ROI","roiStr":"447x417+270+235","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":1,"description":"Esc","keycode":20,"run":true,"wait":1}
+{"ID":0,"baseImageName":"250425093042_5.png","description":"Watch ROI","roiStr":"203x363+24+461","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":93,"y":607}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":380,"y":485}
+{"ID":0,"baseImageName":"250425095746_0.png","description":"Watch ROI","roiStr":"662x561+151+126","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":569,"endY":247,"run":true,"startX":435,"startY":325,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_1.png","description":"Watch ROI","roiStr":"645x563+170+141","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":406,"endY":579,"run":true,"startX":399,"startY":390,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_2.png","description":"Watch ROI","roiStr":"693x551+171+151","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":626,"endY":516,"run":true,"startX":447,"startY":602,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":468,"endY":407,"run":true,"startX":632,"startY":505,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_3.png","description":"Watch ROI","roiStr":"689x560+134+137","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":665,"endY":291,"run":true,"startX":694,"startY":462,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":695,"endY":470,"run":true,"startX":731,"startY":406,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_5.png","description":"Watch ROI","roiStr":"660x589+153+127","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":659,"endY":537,"run":true,"startX":616,"startY":631,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":386,"endY":359,"run":true,"startX":277,"startY":412,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_6.png","description":"Watch ROI","roiStr":"683x593+169+133","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":1,"description":"Esc","keycode":20,"run":true,"wait":1}
+{"ID":0,"baseImageName":"250425095746_7.png","description":"Watch ROI","roiStr":"148x281+24+543","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":129,"y":657}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":371,"y":477}
+{"ID":0,"baseImageName":"250425095746_8.png","description":"Watch ROI","roiStr":"722x570+126+143","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":577,"endY":244,"run":true,"startX":444,"startY":326,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":391,"endY":344,"run":true,"startX":372,"startY":229,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":282,"endY":409,"run":true,"startX":393,"startY":353,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_9.png","description":"Watch ROI","roiStr":"661x562+154+138","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":527,"endY":437,"run":true,"startX":434,"startY":487,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":430,"endY":533,"run":true,"startX":520,"startY":580,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_10.png","description":"Watch ROI","roiStr":"653x540+176+152","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":618,"endY":259,"run":true,"startX":466,"startY":351,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":465,"endY":357,"run":true,"startX":657,"startY":468,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":566,"endY":463,"run":true,"startX":565,"startY":538,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_11.png","description":"Watch ROI","roiStr":"688x539+132+147","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":406,"endY":390,"run":true,"startX":409,"startY":581,"wait":600,"windowName":"3D Puzzles"}
+{"ID":11,"description":"Mouse grab/drop","endX":411,"endY":384,"run":true,"startX":278,"startY":451,"wait":600,"windowName":"3D Puzzles"}
+{"ID":0,"baseImageName":"250425095746_12.png","description":"Watch ROI","roiStr":"624x539+182+160","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":1,"description":"Esc","keycode":20,"run":true,"wait":1}
+{"ID":0,"baseImageName":"250425163425_1.png","description":"Watch ROI","roiStr":"","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":240,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":93,"y":592}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":420,"y":486}
+{"ID":0,"baseImageName":"250425095746_14.png","description":"Watch ROI","roiStr":"697x524+151+161","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":1,"description":"Esc","keycode":20,"run":true,"wait":1}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":107,"y":670}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":407,"y":485}
+{"ID":0,"baseImageName":"250425095746_15.png","description":"Watch ROI","roiStr":"622x501+173+174","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":1,"description":"Esc","keycode":20,"run":true,"wait":1}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":101,"y":724}
+{"ID":5,"description":"Mouse left button click","pressFor":80,"run":true,"wait":600,"windowName":"3D Puzzles","x":405,"y":477}
+{"ID":0,"baseImageName":"250425095746_16.png","description":"Watch ROI","roiStr":"487x388+259+247","run":true,"sensitivity":100,"similarity":true,"strictRun":true,"threshold":140,"timeout":10,"windowName":"3D Puzzles"}
+{"ID":5,"description":"Mouse left button click","pressFor":10,"run":true,"wait":600,"windowName":"3D Puzzles","x":994,"y":14}
+{"ID":3,"description":"exit","run":true,"text":"exit","wait":600}
+{"ID":1,"description":"Enter","keycode":20,"run":true,"wait":18}

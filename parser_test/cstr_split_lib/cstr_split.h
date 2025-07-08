@@ -18,13 +18,14 @@
 #ifndef _CSTR_SPLIT_H
 #define _CSTR_SPLIT_H
 
-#include "debug_utils.h"
+#include <iostream>
 #include <cstring>
 #include <optional>
 
 #define SEPARATOR "#+{35sdfh4}|{7gkjf29}+#"
 
 //====================================================================
+
 template<int N>
 class CstrSplit
 {
@@ -259,15 +260,7 @@ struct FromString<const char8_t*>
 		return reinterpret_cast<const char8_t*>(str);
 	}
 };
-
 //====================================================================
-/*
- * But we could have used nlohmann::json!...
- * Yes we could have, but for this application SimpleSerialization and SimpleUnserialization
- * work faster than nlohmann::json. 
- * 
- * See parser_test directory for comparison tests
- * */
 
 class SimpleSerialization
 {
